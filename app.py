@@ -34,7 +34,7 @@ st.markdown("""
     .warning-box {background:#fff3e0;border-left:4px solid #ff9800;padding:1rem;border-radius:4px;margin:1rem 0;}
     .success-box {background:#e8f5e9;border-left:4px solid #4caf50;padding:1rem;border-radius:4px;margin:1rem 0;}
 </style>
-""", unsafe_allow_html.html)
+""", unsafe_allow_html=True)
 
 # ─── Estado ───
 defaults = {
