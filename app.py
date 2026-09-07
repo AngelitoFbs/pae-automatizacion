@@ -5,7 +5,7 @@ import json
 import tempfile
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 import io
 
 # Import backend logic
@@ -15,309 +15,340 @@ from pae_automatizador import PAEAutomatizador, CertificadoReader, CoberturaWrit
 
 
 st.set_page_config(
-    page_title="PAE Automatización - Certificado → Cobertura",
-    page_icon="📊",
-    layout="wide"
+    page_title="PAE - Certificado a Cobertura",
+    page_icon="🍎",
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-st.title("📊 PAE Automatización: Certificado → Cobertura")
-st.caption("UT Alianza Integral - Programa de Alimentación Escolar")
+# ─── Estilos simples ───
+st.markdown("""
+<style>
+    .step-badge {display:inline-block;padding:4px 12px;border-radius:20px;font-weight:600;font-size:0.85rem;}
+    .step-done {background:#e8f5e9;color:#2e7d32;}
+    .step-active {background:#e3f2fd;color:#1565c0;}
+    .step-pending {background:#f5f5f5;color:#9e9e9e;}
+    .card {border:1px solid #e0e0e0;border-radius:12px;padding:1.2rem;margin-bottom:1rem;background:#fafafa;}
+    .metric-big {font-size:2rem;font-weight:700;color:#1565c0;}
+    .stButton>button {border-radius:8px;font-weight:600;}
+    .warning-box {background:#fff3e0;border-left:4px solid #ff9800;padding:1rem;border-radius:4px;margin:1rem 0;}
+    .success-box {background:#e8f5e9;border-left:4px solid #4caf50;padding:1rem;border-radius:4px;margin:1rem 0;}
+</style>
+""", unsafe_allow_html.html)
 
+# ─── Estado ───
+defaults = {
+    'step': 1,
+    'automatizador': None,
+    'cobertura_df': None,
+    'output_file': None,
+    'colegios_data': {},
+    'tarifas_mapping': {},
+    'edited': False,
+}
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
-# Initialize session state
-if 'automatizador' not in st.session_state:
-    st.session_state.automatizador = None
-if 'colegios_data' not in st.session_state:
-    st.session_state.colegios_data = {}
-if 'cobertura_preview' not in st.session_state:
-    st.session_state.cobertura_preview = None
-if 'output_file' not in st.session_state:
-    st.session_state.output_file = None
-if 'tarifas_df' not in st.session_state:
-    st.session_state.tarifas_df = None
-if 'colegios_tarifas_df' not in st.session_state:
-    st.session_state.colegios_tarifas_df = None
+# ─── Helpers ───
+NIVEL_COLS = {
+    'A': {'AM': 3, 'PM': 4, 'Días': 6},
+    'B': {'AM': 8, 'PM': 9, 'Días': 11},
+    'C': {'AM': 13, 'PM': 14, 'Días': 16},
+    'D': {'AM': 18, 'PM': 19, 'Días': 21},
+}
 
+def step_badge(n, label):
+    cls = 'step-done' if st.session_state.step > n else ('step-active' if st.session_state.step == n else 'step-pending')
+    return f'<span class="step-badge {cls}">Paso {n}</span> {label}'
 
-# Sidebar - File Uploads
-with st.sidebar:
-    st.header("📁 Cargar Archivos")
+def load_default_configs():
+    if st.session_state.get('tarifas_df') is None and Path("tarifas.csv").exists():
+        st.session_state.tarifas_df = pd.read_csv("tarifas.csv")
+    if st.session_state.get('colegios_tarifas_df') is None and Path("colegios_tarifas.csv").exists():
+        st.session_state.colegios_tarifas_df = pd.read_csv("colegios_tarifas.csv", comment='#')
+
+load_default_configs()
+
+# ─── Header ───
+st.title("🍎 PAE: Certificado → Cobertura")
+st.caption("UT Alianza Integral • Programa de Alimentación Escolar")
+
+# ─── Stepper visual ───
+cols = st.columns(4)
+steps = [
+    ("1️⃣ Subir archivos", 1),
+    ("2️⃣ Revisar datos", 2),
+    ("3️⃣ Tarifas", 3),
+    ("4️⃣ Descargar", 4),
+]
+for col, (label, n) in zip(cols, steps):
+    col.markdown(step_badge(n, label), unsafe_allow_html=True)
+
+st.divider()
+
+# ═══════════════════════════════════════════
+# PASO 1: SUBIR ARCHIVOS
+# ═══════════════════════════════════════════
+if st.session_state.step == 1:
+    st.markdown("### 📁 Paso 1: Subir los dos archivos Excel")
     
-    certificado_file = st.file_uploader(
-        "Plantilla Certificado (multi-hoja)",
-        type=['xlsx'],
-        help="Archivo con una hoja por colegio (ej: 2_CERTIFICACIONES_MES_DE_JULIO.xlsx)"
-    )
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("**📄 Plantilla Certificado**")
+        st.caption("Una hoja por colegio • Meses: Julio, Agosto, etc.")
+        cert_file = st.file_uploader(
+            "Certificado",
+            type=['xlsx'],
+            label_visibility="collapsed",
+            help="Ej: 2_CERTIFICACIONES_MES_DE_JULIO.xlsx"
+        )
+        if cert_file:
+            st.success(f"✅ {cert_file.name} ({cert_file.size/1024:.0f} KB)")
+        st.markdown('</div>', unsafe_allow_html=True)
     
-    cobertura_file = st.file_uploader(
-        "Plantilla Cobertura (hoja JULIO)",
-        type=['xlsx'],
-        help="Plantilla base con fórmulas y formato (ej: 3_COBERTURA_EJECUTADA.xlsx)"
-    )
+    with col2:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("**📋 Plantilla Cobertura**")
+        st.caption("Hoja 'JULIO' con fórmulas y formato listo")
+        cob_file = st.file_uploader(
+            "Cobertura",
+            type=['xlsx'],
+            label_visibility="collapsed",
+            help="Ej: 3_COBERTURA_EJECUTADA_JULIO_2026.xlsx"
+        )
+        if cob_file:
+            st.success(f"✅ {cob_file.name} ({cob_file.size/1024:.0f} KB)")
+        st.markdown('</div>', unsafe_allow_html=True)
     
     st.divider()
     
-    st.subheader("⚙️ Configuración Tarifas")
+    # Configuración opcional en expander
+    with st.expander("⚙️ Configuración avanzada (opcional)"):
+        c1, c2 = st.columns(2)
+        with c1:
+            tarifas_file = st.file_uploader("tarifas.csv", type=['csv'], help="Grupos de tarifa por nivel A-D")
+            if tarifas_file:
+                st.session_state.tarifas_df = pd.read_csv(tarifas_file)
+                st.success("Tarifas personalizadas cargadas")
+        with c2:
+            map_file = st.file_uploader("colegios_tarifas.csv", type=['csv'], help="DANE → grupo_tarifa")
+            if map_file:
+                st.session_state.colegios_tarifas_df = pd.read_csv(map_file, comment='#')
+                st.success("Mapeo colegio-tarifa cargado")
     
-    tarifas_file = st.file_uploader(
-        "Tabla de Tarifas (tarifas.csv)",
-        type=['csv'],
-        help="Grupos de tarifa por nivel (A, B, C, D)"
-    )
-    
-    colegios_tarifas_file = st.file_uploader(
-        "Mapeo Colegio → Tarifa (colegios_tarifas.csv)",
-        type=['csv'],
-        help="Opcional: DANE → grupo_tarifa"
-    )
-    
-    # Load default configs if available
-    if tarifas_file is None:
-        default_tarifas = Path("tarifas.csv")
-        if default_tarifas.exists():
-            st.session_state.tarifas_df = pd.read_csv(default_tarifas)
-            st.info("✅ tarifas.csv cargado por defecto")
-    
-    if colegios_tarifas_file is None:
-        default_colegios = Path("colegios_tarifas.csv")
-        if default_colegios.exists():
-            st.session_state.colegios_tarifas_df = pd.read_csv(default_colegios, comment='#')
-            st.info("✅ colegios_tarifas.csv cargado por defecto")
-
-
-# Main area - Step by step workflow
-tab1, tab2, tab3, tab4 = st.tabs([
-    "1️⃣ Cargar y Procesar", 
-    "2️⃣ Vista Previa y Editar", 
-    "3️⃣ Asignar Tarifas", 
-    "4️⃣ Exportar Final"
-])
-
-
-with tab1:
-    st.header("Paso 1: Procesar Archivos")
-    
-    if certificado_file and cobertura_file:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("📄 Certificado")
-            st.write(f"**Archivo:** {certificado_file.name}")
-            st.write(f"**Tamaño:** {certificado_file.size / 1024:.1f} KB")
-        
-        with col2:
-            st.subheader("📋 Cobertura")
-            st.write(f"**Archivo:** {cobertura_file.name}")
-            st.write(f"**Tamaño:** {cobertura_file.size / 1024:.1f} KB")
-        
-        if st.button("🚀 Procesar y Generar Borrador", type="primary", use_container_width=True):
-            with st.spinner("Leyendo Certificado y escribiendo en Cobertura..."):
-                # Save uploaded files to temp
+    if cert_file and cob_file:
+        if st.button("🚀 Procesar y Continuar", type="primary", use_container_width=True):
+            with st.spinner("Leyendo certificados y llenando cobertura..."):
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_cert:
-                    tmp_cert.write(certificado_file.getvalue())
-                    cert_path = tmp_cert.name
-                
+                    tmp_cert.write(cert_file.getvalue()); cert_path = tmp_cert.name
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_cob:
-                    tmp_cob.write(cobertura_file.getvalue())
-                    cob_path = tmp_cob.name
-                
+                    tmp_cob.write(cob_file.getvalue()); cob_path = tmp_cob.name
                 try:
-                    # Prepare tarifas paths
                     tarifas_path = "tarifas.csv"
-                    colegios_tarifas_path = "colegios_tarifas.csv"
+                    map_path = "colegios_tarifas.csv"
+                    if 'tarifas_df' in st.session_state and st.session_state.tarifas_df is not None:
+                        st.session_state.tarifas_df.to_csv(tarifas_path, index=False)
+                    if 'colegios_tarifas_df' in st.session_state and st.session_state.colegios_tarifas_df is not None:
+                        st.session_state.colegios_tarifas_df.to_csv(map_path, index=False)
                     
-                    if tarifas_file:
-                        with open(tarifas_path, 'wb') as f:
-                            f.write(tarifas_file.getvalue())
+                    aut = PAEAutomatizador(cert_path, cob_path, tarifas_path, map_path)
+                    aut.procesar()
                     
-                    if colegios_tarifas_file:
-                        with open(colegios_tarifas_path, 'wb') as f:
-                            f.write(colegios_tarifas_file.getvalue())
+                    out_path = "cobertura_borrador.xlsx"
+                    aut.writer.save(out_path)
                     
-                    # Run automation
-                    automatizador = PAEAutomatizador(cert_path, cob_path, tarifas_path, colegios_tarifas_path)
-                    automatizador.procesar()
+                    st.session_state.automatizador = aut
+                    st.session_state.colegios_data = {d: vars(c) for d, c in aut.colegios.items()}
+                    st.session_state.output_file = out_path
                     
-                    # Save draft
-                    output_path = "cobertura_borrador_streamlit.xlsx"
-                    automatizador.writer.save(output_path)
+                    preview = aut.writer.get_preview_data()
+                    st.session_state.cobertura_df = pd.DataFrame(preview) if preview else pd.DataFrame()
                     
-                    st.session_state.automatizador = automatizador
-                    st.session_state.colegios_data = {dane: vars(c) for dane, c in automatizador.colegios.items()}
-                    st.session_state.output_file = output_path
+                    # Cargar mapeo actual de tarifas
+                    if Path(map_path).exists():
+                        dfm = pd.read_csv(map_path, comment='#')
+                        st.session_state.tarifas_mapping = dict(zip(dfm['codigo_dane'].astype(str), dfm['grupo_tarifa']))
                     
-                    # Get preview
-                    preview = automatizador.writer.get_preview_data()
-                    st.session_state.cobertura_preview = pd.DataFrame(preview) if preview else pd.DataFrame()
-                    
-                    st.success(f"✅ Procesados {len(automatizador.colegios)} colegios, {len(automatizador.resultado)} filas escritas")
-                    
-                    # Show summary
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Colegios en Certificado", len(automatizador.colegios))
-                    with col2:
-                        st.metric("Filas escritas en Cobertura", len(automatizador.resultado))
-                    with col3:
-                        sin_cobertura = len(set(automatizador.colegios.keys()) - set([c.codigo_dane for c in automatizador.colegios.values() if hasattr(c, 'codigo_dane')]))
-                        st.metric("Sin coincidencia", "Ver log")
-                    
+                    st.session_state.step = 2
+                    st.session_state.edited = False
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Error: {e}")
                     st.exception(e)
                 finally:
-                    # Cleanup temp files
-                    try:
-                        os.unlink(cert_path)
-                        os.unlink(cob_path)
-                    except:
-                        pass
-    else:
-        st.info("👈 Carga ambos archivos en el panel lateral para comenzar")
+                    try: os.unlink(cert_path); os.unlink(cob_path)
+                    except: pass
 
-
-with tab2:
-    st.header("Paso 2: Vista Previa y Edición")
+# ═══════════════════════════════════════════
+# PASO 2: REVISAR Y EDITAR
+# ═══════════════════════════════════════════
+elif st.session_state.step == 2:
+    st.markdown("### 📋 Paso 2: Revisar y corregir datos")
     
-    if st.session_state.cobertura_preview is not None and not st.session_state.cobertura_preview.empty:
-        df = st.session_state.cobertura_preview.copy()
+    if st.session_state.cobertura_df is None or st.session_state.cobertura_df.empty:
+        st.warning("No hay datos. Vuelve al Paso 1.")
+        if st.button("← Volver"): st.session_state.step = 1; st.rerun()
+    else:
+        df = st.session_state.cobertura_df.copy()
         
-        # Filter to show only rows with data
+        # Solo filas con datos
         data_cols = [c for c in df.columns if c.startswith('nivel_') and ('am' in c or 'pm' in c or 'dias' in c)]
         if data_cols:
-            df['has_data'] = df[data_cols].notna().any(axis=1)
-            df_data = df[df['has_data']].drop(columns=['has_data'])
+            df['_tiene_datos'] = df[data_cols].notna().any(axis=1)
+            df_show = df[df['_tiene_datos']].drop(columns=['_tiene_datos']).reset_index(drop=True)
         else:
-            df_data = df
+            df_show = df.reset_index(drop=True)
         
-        st.subheader(f"📋 Datos a escribir en Cobertura ({len(df_data)} filas con datos)")
+        # Renombrar columnas a nombres amigables
+        rename_map = {
+            'fila': 'Fila',
+            'dane': 'DANE',
+            'nombre': 'Colegio',
+        }
+        for n in ['A','B','C','D']:
+            rename_map[f'nivel_{n.lower()}_am'] = f'{n} - AM'
+            rename_map[f'nivel_{n.lower()}_pm'] = f'{n} - PM'
+            rename_map[f'nivel_{n.lower()}_dias'] = f'{n} - Días'
+        df_show = df_show.rename(columns=rename_map)
         
-        # Display editable dataframe
-        edited_df = st.data_editor(
-            df_data,
+        # Columnas a mostrar
+        show_cols = ['Fila', 'DANE', 'Colegio']
+        for n in ['A','B','C','D']:
+            show_cols += [f'{n} - AM', f'{n} - PM', f'{n} - Días']
+        
+        # Editor
+        st.caption("✏️ **Edita directamente en la tabla** • Celdas vacías = 0 • Los totales se recalculan solos en Excel")
+        edited = st.data_editor(
+            df_show[show_cols],
             use_container_width=True,
             hide_index=True,
             num_rows="dynamic",
             column_config={
-                "fila": st.column_config.NumberColumn("Fila", disabled=True),
-                "dane": st.column_config.TextColumn("DANE", disabled=True),
-                "nombre": st.column_config.TextColumn("Colegio", disabled=True, width="large"),
-            }
+                "Fila": st.column_config.NumberColumn("Fila", disabled=True, width="small"),
+                "DANE": st.column_config.TextColumn("DANE", disabled=True, width="medium"),
+                "Colegio": st.column_config.TextColumn("Colegio", disabled=True, width="large"),
+                **{f'{n} - AM': st.column_config.NumberColumn(f'{n} AM', min_value=0, step=1, width="small") for n in ['A','B','C','D']},
+                **{f'{n} - PM': st.column_config.NumberColumn(f'{n} PM', min_value=0, step=1, width="small") for n in ['A','B','C','D']},
+                **{f'{n} - Días': st.column_config.NumberColumn(f'{n} Días', min_value=0, max_value=31, step=1, width="small") for n in ['A','B','C','D']},
+            },
+            key="data_editor"
         )
         
-        if st.button("💾 Guardar Cambios en Borrador", use_container_width=True):
-            # Apply edits to the workbook
-            wb = openpyxl.load_workbook(st.session_state.output_file)
-            ws = wb.active
-            
-            # Map columns back to Excel
-            nivel_cols = {
-                'A': {'am': 3, 'pm': 4, 'dias': 6},
-                'B': {'am': 8, 'pm': 9, 'dias': 11},
-                'C': {'am': 13, 'pm': 14, 'dias': 16},
-                'D': {'am': 18, 'pm': 19, 'dias': 21},
-            }
-            
-            for _, row in edited_df.iterrows():
-                fila = int(row['fila'])
-                for nivel in ['A', 'B', 'C', 'D']:
-                    cols = nivel_cols[nivel]
-                    for campo, col_idx in cols.items():
-                        val = row.get(f'nivel_{nivel.lower()}_{campo}')
-                        if pd.notna(val) and val != '':
-                            ws.cell(row=fila, column=col_idx, value=val)
-            
-            wb.save(st.session_state.output_file)
-            st.success("✅ Cambios guardados en el borrador")
-            st.rerun()
-    else:
-        st.info("Primero procesa los archivos en la pestaña 1")
+        # Detectar cambios
+        if not edited.equals(df_show[show_cols]):
+            st.session_state.edited = True
+            st.session_state.cobertura_df = edited
+        
+        col1, col2, col3 = st.columns([1,1,1])
+        with col1:
+            if st.button("← Volver", use_container_width=True):
+                st.session_state.step = 1; st.rerun()
+        with col2:
+            if st.button("💾 Guardar cambios", type="secondary", use_container_width=True, disabled=not st.session_state.edited):
+                wb = openpyxl.load_workbook(st.session_state.output_file)
+                ws = wb.active
+                # Mapear de vuelta a columnas Excel
+                for _, row in edited.iterrows():
+                    fila = int(row['Fila'])
+                    for n in ['A','B','C','D']:
+                        cols = NIVEL_COLS[n]
+                        for campo_excel, col_idx in cols.items():
+                            col_name = f'{n} - {campo_excel}'
+                            val = row.get(col_name)
+                            if pd.notna(val) and val != '':
+                                ws.cell(row=fila, column=col_idx, value=int(val))
+                wb.save(st.session_state.output_file)
+                st.session_state.edited = False
+                st.success("✅ Guardado")
+        with col3:
+            if st.button("Continuar →", type="primary", use_container_width=True):
+                st.session_state.step = 3; st.rerun()
+        
+        # Resumen rápido
+        st.divider()
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Filas con datos", len(df_show))
+        total_am = sum(pd.to_numeric(df_show.get(f'{n} - AM', 0), errors='coerce').fillna(0).sum() for n in ['A','B','C','D'])
+        total_pm = sum(pd.to_numeric(df_show.get(f'{n} - PM', 0), errors='coerce').fillna(0).sum() for n in ['A','B','C','D'])
+        c2.metric("Total AM", f"{int(total_am):,}")
+        c3.metric("Total PM", f"{int(total_pm):,}")
 
-
-with tab3:
-    st.header("Paso 3: Asignar Grupos de Tarifa")
+# ═══════════════════════════════════════════
+# PASO 3: TARIFAS
+# ═══════════════════════════════════════════
+elif st.session_state.step == 3:
+    st.markdown("### 💰 Paso 3: Asignar grupo de tarifa por colegio")
+    st.caption("Cada grupo tiene precios distintos. Ver tabla de referencia abajo.")
     
-    if st.session_state.colegios_data:
-        # Load current tarifas
-        if st.session_state.tarifas_df is not None:
-            grupos_disponibles = st.session_state.tarifas_df['grupo'].unique().tolist()
-        else:
-            grupos_disponibles = ['grupo_1', 'grupo_2', 'grupo_3', 'grupo_4']
+    if not st.session_state.colegios_data:
+        st.warning("Sin datos. Vuelve al Paso 1.")
+        if st.button("← Volver"): st.session_state.step = 1; st.rerun()
+    else:
+        # Tabla de referencia
+        if st.session_state.get('tarifas_df') is not None:
+            with st.expander("📊 Ver tabla de precios por grupo"):
+                tdf = st.session_state.tarifas_df.pivot(index='nivel', columns='grupo', values='tarifa')
+                tdf.columns.name = None
+                st.dataframe(tdf, use_container_width=True)
+                st.caption("Niveles E no se usan en Cobertura JULIO (solo A-D)")
         
-        # Load existing mappings
-        if st.session_state.colegios_tarifas_df is not None:
-            mapping = dict(zip(
-                st.session_state.colegios_tarifas_df['codigo_dane'].astype(str),
-                st.session_state.colegios_tarifas_df['grupo_tarifa']
-            ))
-        else:
-            mapping = {}
+        grupos = st.session_state.get('tarifas_df', pd.DataFrame()).get('grupo', pd.Series(['grupo_1','grupo_2','grupo_3','grupo_4'])).unique().tolist()
+        if not grupos: grupos = ['grupo_1','grupo_2','grupo_3','grupo_4']
         
-        st.subheader("📝 Asignar grupo de tarifa por colegio")
-        st.caption("Cada grupo tiene precios distintos para niveles A, B, C, D. Ver tabla abajo.")
-        
-        # Show tariff table
-        if st.session_state.tarifas_df is not None:
-            with st.expander("📊 Ver tabla de tarifas"):
-                st.dataframe(st.session_state.tarifas_df.pivot(index='nivel', columns='grupo', values='tarifa'), use_container_width=True)
-        
-        # Create mapping editor
-        mapping_data = []
-        for dane, colegio in st.session_state.colegios_data.items():
-            nombre = colegio.get('nombre', '')
-            current_grupo = mapping.get(str(dane), 'grupo_1')
-            mapping_data.append({
-                'DANE': dane,
-                'Colegio': nombre[:60] + '...' if len(nombre) > 60 else nombre,
-                'Grupo Tarifa': current_grupo
+        # Build mapping table
+        rows = []
+        for dane, col in st.session_state.colegios_data.items():
+            nombre = col.get('nombre', '')
+            rows.append({
+                'DANE': str(dane),
+                'Colegio': nombre,
+                'Grupo': st.session_state.tarifas_mapping.get(str(dane), 'grupo_1')
             })
         
-        mapping_df = pd.DataFrame(mapping_data)
+        map_df = pd.DataFrame(rows)
         
-        edited_mapping = st.data_editor(
-            mapping_df,
+        edited_map = st.data_editor(
+            map_df,
             use_container_width=True,
             hide_index=True,
             column_config={
-                "DANE": st.column_config.TextColumn("DANE", disabled=True),
+                "DANE": st.column_config.TextColumn("DANE", disabled=True, width="small"),
                 "Colegio": st.column_config.TextColumn("Colegio", disabled=True, width="large"),
-                "Grupo Tarifa": st.column_config.SelectboxColumn(
-                    "Grupo Tarifa",
-                    options=grupos_disponibles,
-                    required=True
-                ),
-            }
+                "Grupo": st.column_config.SelectboxColumn("Grupo tarifa", options=grupos, required=True, width="medium"),
+            },
+            key="tarifa_editor"
         )
         
-        if st.button("💾 Guardar Asignación de Tarifas", use_container_width=True):
-            # Save to CSV
-            output_df = edited_mapping[['DANE', 'Grupo Tarifa']].rename(columns={'Grupo Tarifa': 'grupo_tarifa'})
-            output_df.to_csv("colegios_tarifas.csv", index=False)
-            st.session_state.colegios_tarifas_df = output_df
-            st.success("✅ Mapeo guardado en colegios_tarifas.csv")
-            
-            # Regenerate with new tarifas
-            if st.session_state.automatizador:
-                with st.spinner("Regenerando con nuevas tarifas..."):
-                    # Re-process with updated tarifas
-                    st.info("Vuelve a la pestaña 1 y presiona 'Procesar' nuevamente para aplicar las nuevas tarifas")
-    else:
-        st.info("Primero procesa los archivos en la pestaña 1")
-
-
-with tab4:
-    st.header("Paso 4: Exportar Archivo Final")
-    
-    if st.session_state.output_file and os.path.exists(st.session_state.output_file):
-        st.subheader("📥 Descargar Cobertura Final")
+        if st.button("💾 Guardar y continuar", type="primary", use_container_width=True):
+            out = edited_map[['DANE', 'Grupo']].rename(columns={'Grupo': 'grupo_tarifa'})
+            out.to_csv("colegios_tarifas.csv", index=False)
+            st.session_state.tarifas_mapping = dict(zip(out['DANE'], out['grupo_tarifa']))
+            st.session_state.colegios_tarifas_df = out
+            st.success("✅ Tarifas guardadas")
+            st.session_state.step = 4
+            st.rerun()
         
+        if st.button("← Volver", use_container_width=True):
+            st.session_state.step = 2; st.rerun()
+
+# ═══════════════════════════════════════════
+# PASO 4: DESCARGAR
+# ═══════════════════════════════════════════
+elif st.session_state.step == 4:
+    st.markdown("### 📥 Paso 4: Descargar archivo final")
+    
+    if st.session_state.output_file and Path(st.session_state.output_file).exists():
         with open(st.session_state.output_file, 'rb') as f:
-            file_bytes = f.read()
+            data = f.read()
+        
+        st.markdown('<div class="success-box">✅ Archivo listo para descargar</div>', unsafe_allow_html=True)
         
         st.download_button(
-            label="⬇️ Descargar cobertura_final.xlsx",
-            data=file_bytes,
-            file_name="cobertura_final.xlsx",
+            "⬇️ Descargar COBERTURA_FINAL.xlsx",
+            data=data,
+            file_name="COBERTURA_FINAL.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             type="primary",
             use_container_width=True
@@ -325,31 +356,45 @@ with tab4:
         
         st.divider()
         
-        # Show log
-        log_path = st.session_state.output_file.replace('.xlsx', '_log.json')
-        if os.path.exists(log_path):
-            with open(log_path, 'r', encoding='utf-8') as f:
-                log_data = json.load(f)
-            
-            with st.expander("📋 Ver Log de Procesamiento"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("Colegios procesados", log_data.get('colegios_procesados', 0))
-                    st.metric("Filas escritas", log_data.get('filas_escritas', 0))
-                with col2:
-                    st.write("**Colegios sin coincidencia en Cobertura:**")
-                    for c in log_data.get('colegios_sin_cobertura', [])[:10]:
-                        st.write(f"  - {c}")
-                    if len(log_data.get('colegios_sin_cobertura', [])) > 10:
-                        st.write(f"  ... y {len(log_data.get('colegios_sin_cobertura', [])) - 10} más")
+        # Resumen final
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Colegios procesados", len(st.session_state.colegios_data))
+        c2.metric("Filas en Cobertura", len(st.session_state.cobertura_df) if st.session_state.cobertura_df is not None else 0)
+        c3.metric("Grupos de tarifa usados", len(set(st.session_state.tarifas_mapping.values())))
+        
+        # Log
+        log_path = Path(st.session_state.output_file).with_suffix('_log.json')
+        if log_path.exists():
+            with st.expander("📋 Ver detalle y advertencias"):
+                log = json.loads(log_path.read_text(encoding='utf-8'))
                 
-                if log_data.get('detalle'):
-                    st.write("**Detalle de filas escritas:**")
-                    st.dataframe(pd.DataFrame(log_data['detalle']), use_container_width=True)
+                if log.get('colegios_sin_cobertura'):
+                    st.markdown("**⚠️ Colegios en Certificado SIN coincidencia en Cobertura:**")
+                    for c in log['colegios_sin_cobertura']:
+                        st.write(f"  • {c}")
+                
+                if log.get('colegios_sin_certificado'):
+                    st.markdown("**ℹ️ Colegios en Cobertura SIN certificado:**")
+                    for c in log['colegios_sin_certificado'][:15]:
+                        st.write(f"  • {c}")
+                    if len(log['colegios_sin_certificado']) > 15:
+                        st.write(f"  ... y {len(log['colegios_sin_certificado']) - 15} más")
+                
+                if log.get('detalle'):
+                    st.markdown("**📄 Filas generadas:**")
+                    st.dataframe(pd.DataFrame(log['detalle']), use_container_width=True)
+        
+        st.divider()
+        if st.button("🔄 Procesar otro mes", use_container_width=True):
+            for k in list(st.session_state.keys()):
+                del st.session_state[k]
+            st.rerun()
     else:
-        st.info("Completa los pasos anteriores para generar el archivo final")
+        st.warning("No hay archivo generado. Completa los pasos anteriores.")
+        if st.button("← Volver al inicio"): 
+            for k in list(st.session_state.keys()): del st.session_state[k]
+            st.rerun()
 
-
-# Footer
+# ─── Footer ───
 st.divider()
-st.caption("PAE Automatización v1.0 | UT Alianza Integral | Desarrollado con Streamlit + openpyxl + pandas")
+st.caption("PAE Automatización v1.1 | UT Alianza Integral | Dudas: soporte@utalianzaintegral.gov.co")
