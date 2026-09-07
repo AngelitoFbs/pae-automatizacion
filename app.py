@@ -64,9 +64,17 @@ def step_badge(n, label):
 
 def load_default_configs():
     if st.session_state.get('tarifas_df') is None and Path("tarifas.csv").exists():
-        st.session_state.tarifas_df = pd.read_csv("tarifas.csv")
+        try:
+            st.session_state.tarifas_df = pd.read_csv("tarifas.csv")
+        except:
+            pass
     if st.session_state.get('colegios_tarifas_df') is None and Path("colegios_tarifas.csv").exists():
-        st.session_state.colegios_tarifas_df = pd.read_csv("colegios_tarifas.csv", comment='#')
+        try:
+            df = pd.read_csv("colegios_tarifas.csv", comment='#')
+            if 'codigo_dane' in df.columns and 'grupo_tarifa' in df.columns:
+                st.session_state.colegios_tarifas_df = df
+        except:
+            pass
 
 load_default_configs()
 
@@ -294,8 +302,13 @@ elif st.session_state.step == 3:
                 st.dataframe(tdf, use_container_width=True)
                 st.caption("Niveles E no se usan en Cobertura JULIO (solo A-D)")
         
-        grupos = st.session_state.get('tarifas_df', pd.DataFrame()).get('grupo', pd.Series(['grupo_1','grupo_2','grupo_3','grupo_4'])).unique().tolist()
-        if not grupos: grupos = ['grupo_1','grupo_2','grupo_3','grupo_4']
+        # Obtener grupos disponibles
+        grupos = ['grupo_1','grupo_2','grupo_3','grupo_4']
+        if st.session_state.get('tarifas_df') is not None:
+            try:
+                grupos = st.session_state.tarifas_df['grupo'].unique().tolist()
+            except:
+                pass
         
         # Build mapping table
         rows = []
