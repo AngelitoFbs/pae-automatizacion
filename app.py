@@ -281,10 +281,16 @@ elif st.session_state.step == 2:
         st.divider()
         c1, c2, c3 = st.columns(3)
         c1.metric("Filas con datos", len(df_show))
-        total_am = sum(pd.to_numeric(df_show.get(f'{n} - AM', 0), errors='coerce').fillna(0).sum() for n in ['A','B','C','D'])
-        total_pm = sum(pd.to_numeric(df_show.get(f'{n} - PM', 0), errors='coerce').fillna(0).sum() for n in ['A','B','C','D'])
-        c2.metric("Total AM", f"{int(total_am):,}")
-        c3.metric("Total PM", f"{int(total_pm):,}")
+        
+        def safe_sum(df, col):
+            if col in df.columns:
+                return int(pd.to_numeric(df[col], errors='coerce').fillna(0).sum())
+            return 0
+        
+        total_am = sum(safe_sum(df_show, f'{n} - AM') for n in ['A','B','C','D'])
+        total_pm = sum(safe_sum(df_show, f'{n} - PM') for n in ['A','B','C','D'])
+        c2.metric("Total AM", f"{total_am:,}")
+        c3.metric("Total PM", f"{total_pm:,}")
 
 # ═══════════════════════════════════════════
 # PASO 3: TARIFAS
