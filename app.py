@@ -385,7 +385,9 @@ elif st.session_state.step == 4:
         c3.metric("Grupos de tarifa usados", len(set(st.session_state.tarifas_mapping.values())))
         
         # Log
-        log_path = Path(st.session_state.output_file).with_suffix('_log.json')
+        log_path = Path(st.session_state.output_file).with_name(
+            Path(st.session_state.output_file).stem + '_log.json'
+        )
         if log_path.exists():
             with st.expander("📋 Ver detalle y advertencias"):
                 log = json.loads(log_path.read_text(encoding='utf-8'))
