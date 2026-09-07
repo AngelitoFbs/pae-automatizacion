@@ -71,13 +71,19 @@ class TarifasManager:
         if not self.colegios_tarifas_path.exists():
             logger.info(f"Archivo de mapeo colegios-tarifas no encontrado: {self.colegios_tarifas_path} (opcional)")
             return
-        df = pd.read_csv(self.colegios_tarifas_path, comment='#')
-        for _, row in df.iterrows():
-            dane = str(row['codigo_dane']).strip()
-            grupo = str(row['grupo_tarifa']).strip()
-            if dane and grupo:
-                self.colegio_grupo[dane] = grupo
-        logger.info(f"Mapeo colegios-tarifas cargado: {len(self.colegio_grupo)} entradas")
+        try:
+            df = pd.read_csv(self.colegios_tarifas_path, comment='#')
+            if 'codigo_dane' not in df.columns or 'grupo_tarifa' not in df.columns:
+                logger.warning(f"Columnas esperadas no encontradas en {self.colegios_tarifas_path}. Columnas: {list(df.columns)}")
+                return
+            for _, row in df.iterrows():
+                dane = str(row['codigo_dane']).strip()
+                grupo = str(row['grupo_tarifa']).strip()
+                if dane and grupo:
+                    self.colegio_grupo[dane] = grupo
+            logger.info(f"Mapeo colegios-tarifas cargado: {len(self.colegio_grupo)} entradas")
+        except Exception as e:
+            logger.warning(f"Error leyendo {self.colegios_tarifas_path}: {e}")
 
     def get_tarifa(self, grupo: str, nivel: str) -> Optional[int]:
         return self.tarifas.get(grupo, {}).get(nivel)
