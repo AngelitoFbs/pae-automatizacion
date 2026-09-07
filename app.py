@@ -209,7 +209,7 @@ elif st.session_state.step == 2:
         else:
             df_show = df.reset_index(drop=True)
         
-        # Renombrar columnas a nombres amigables
+        # Renombrar columnas a nombres amigables (solo las que existan)
         rename_map = {
             'fila': 'Fila',
             'dane': 'DANE',
@@ -219,12 +219,15 @@ elif st.session_state.step == 2:
             rename_map[f'nivel_{n.lower()}_am'] = f'{n} - AM'
             rename_map[f'nivel_{n.lower()}_pm'] = f'{n} - PM'
             rename_map[f'nivel_{n.lower()}_dias'] = f'{n} - Días'
-        df_show = df_show.rename(columns=rename_map)
+        # Solo renombrar columnas que existan
+        existing_rename = {k: v for k, v in rename_map.items() if k in df_show.columns}
+        df_show = df_show.rename(columns=existing_rename)
         
-        # Columnas a mostrar
+        # Columnas a mostrar (solo las que existan tras renombrar)
         show_cols = ['Fila', 'DANE', 'Colegio']
         for n in ['A','B','C','D']:
             show_cols += [f'{n} - AM', f'{n} - PM', f'{n} - Días']
+        show_cols = [c for c in show_cols if c in df_show.columns]
         
         # Editor
         st.caption("✏️ **Edita directamente en la tabla** • Celdas vacías = 0 • Los totales se recalculan solos en Excel")
@@ -237,9 +240,9 @@ elif st.session_state.step == 2:
                 "Fila": st.column_config.NumberColumn("Fila", disabled=True, width="small"),
                 "DANE": st.column_config.TextColumn("DANE", disabled=True, width="medium"),
                 "Colegio": st.column_config.TextColumn("Colegio", disabled=True, width="large"),
-                **{f'{n} - AM': st.column_config.NumberColumn(f'{n} AM', min_value=0, step=1, width="small") for n in ['A','B','C','D']},
-                **{f'{n} - PM': st.column_config.NumberColumn(f'{n} PM', min_value=0, step=1, width="small") for n in ['A','B','C','D']},
-                **{f'{n} - Días': st.column_config.NumberColumn(f'{n} Días', min_value=0, max_value=31, step=1, width="small") for n in ['A','B','C','D']},
+                **{f'{n} - AM': st.column_config.NumberColumn(f'{n} AM', min_value=0, step=1, width="small") for n in ['A','B','C','D'] if f'{n} - AM' in show_cols},
+                **{f'{n} - PM': st.column_config.NumberColumn(f'{n} PM', min_value=0, step=1, width="small") for n in ['A','B','C','D'] if f'{n} - PM' in show_cols},
+                **{f'{n} - Días': st.column_config.NumberColumn(f'{n} Días', min_value=0, max_value=31, step=1, width="small") for n in ['A','B','C','D'] if f'{n} - Días' in show_cols},
             },
             key="data_editor"
         )
