@@ -21,18 +21,152 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ─── Estilos simples ───
+# ─── Estilos con paleta FOMBISOL + Animaciones ───
 st.markdown("""
 <style>
-    .step-badge {display:inline-block;padding:4px 12px;border-radius:20px;font-weight:600;font-size:0.85rem;}
-    .step-done {background:#e8f5e9;color:#2e7d32;}
-    .step-active {background:#e3f2fd;color:#1565c0;}
-    .step-pending {background:#f5f5f5;color:#9e9e9e;}
-    .card {border:1px solid #e0e0e0;border-radius:12px;padding:1.2rem;margin-bottom:1rem;background:#fafafa;}
-    .metric-big {font-size:2rem;font-weight:700;color:#1565c0;}
-    .stButton>button {border-radius:8px;font-weight:600;}
-    .warning-box {background:#fff3e0;border-left:4px solid #ff9800;padding:1rem;border-radius:4px;margin:1rem 0;}
-    .success-box {background:#e8f5e9;border-left:4px solid #4caf50;padding:1rem;border-radius:4px;margin:1rem 0;}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --navy: #08244A;
+    --navy-dark: #102B50;
+    --gold: #E7B52A;
+    --gold-light: #F2C94C;
+    --white: #FFFFFF;
+    --green: #2E9B3F;
+    --gray-50: #F8FAFC;
+    --gray-100: #F1F5F9;
+    --gray-200: #E2E8F0;
+    --gray-300: #CBD5E1;
+    --gray-600: #475569;
+    --gray-700: #334155;
+}
+
+* {font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;}
+
+.stApp {background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);}
+
+@keyframes fadeInUp {from {opacity:0;transform:translateY(20px);} to {opacity:1;transform:translateY(0);}}
+@keyframes slideInRight {from {opacity:0;transform:translateX(30px);} to {opacity:1;transform:translateX(0);}}
+@keyframes pulse {0%,100% {box-shadow:0 0 0 0 rgba(231,181,42,0.4);} 50% {box-shadow:0 0 0 12px rgba(231,181,42,0);}}
+@keyframes shimmer {0% {background-position:-200% 0;} 100% {background-position:200% 0;}}
+
+.animate-in {animation:fadeInUp 0.5s ease-out forwards;}
+.animate-delay-1 {animation-delay:0.1s;}
+.animate-delay-2 {animation-delay:0.2s;}
+.animate-delay-3 {animation-delay:0.3s;}
+.animate-delay-4 {animation-delay:0.4s;}
+
+.step-badge {
+    display:inline-flex;align-items:center;gap:6px;
+    padding:8px 16px;border-radius:999px;font-weight:600;font-size:0.85rem;
+    transition:all 0.3s ease;
+}
+.step-done {background:linear-gradient(135deg,var(--green) 0%,#22c55e 100%);color:#fff;box-shadow:0 4px 14px rgba(46,155,63,0.3);}
+.step-active {background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);color:#fff;animation:pulse 2s infinite;box-shadow:0 4px 20px rgba(8,36,74,0.3);}
+.step-pending {background:var(--gray-100);color:var(--gray-600);}
+
+.card {
+    background:var(--white);
+    border:1px solid var(--gray-200);
+    border-radius:16px;
+    padding:1.5rem;
+    margin-bottom:1rem;
+    box-shadow:0 2px 8px rgba(8,36,74,0.04);
+    transition:all 0.3s ease;
+}
+.card:hover {border-color:var(--gold-light);box-shadow:0 8px 24px rgba(8,36,74,0.08);transform:translateY(-2px);}
+.card-gold {border:2px solid var(--gold);background:linear-gradient(135deg,#fffdf5 0%,#ffffff 100%);}
+
+.metric-big {font-size:2.5rem;font-weight:700;color:var(--navy);background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+.stButton>button {
+    border-radius:10px !important;
+    font-weight:600 !important;
+    transition:all 0.2s ease !important;
+    border:none !important;
+}
+.stButton>button[kind="primary"] {
+    background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%) !important;
+    color:var(--navy) !important;
+    box-shadow:0 4px 16px rgba(231,181,42,0.3) !important;
+}
+.stButton>button[kind="primary"]:hover {
+    transform:translateY(-2px);
+    box-shadow:0 8px 24px rgba(231,181,42,0.4) !important;
+}
+.stButton>button[kind="secondary"] {
+    background:var(--white) !important;
+    color:var(--navy) !important;
+    border:2px solid var(--gray-200) !important;
+}
+.stButton>button[kind="secondary"]:hover {
+    border-color:var(--gold) !important;
+    background:linear-gradient(135deg,#fffdf5 0%,#ffffff 100%) !important;
+}
+
+.warning-box {
+    background:linear-gradient(135deg,#fff8ed 0%,#fffdf5 100%);
+    border-left:4px solid var(--gold);
+    padding:1rem 1.25rem;
+    border-radius:12px;
+    margin:1rem 0;
+}
+.success-box {
+    background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);
+    border-left:4px solid var(--green);
+    padding:1rem 1.25rem;
+    border-radius:12px;
+    margin:1rem 0;
+}
+
+[data-testid="stFileUploader"] {
+    border:2px dashed var(--gray-300) !important;
+    border-radius:16px !important;
+    padding:2rem !important;
+    background:var(--white) !important;
+    transition:all 0.3s ease !important;
+}
+[data-testid="stFileUploader"]:hover {
+    border-color:var(--gold) !important;
+    background:linear-gradient(135deg,#fffdf5 0%,#ffffff 100%) !important;
+}
+[data-testid="stFileUploader"]:focus-within {
+    border-color:var(--gold) !important;
+    box-shadow:0 0 0 4px rgba(231,181,42,0.15) !important;
+}
+
+[data-testid="stDataFrame"] {
+    border-radius:12px !important;
+    overflow:hidden !important;
+    border:1px solid var(--gray-200) !important;
+}
+
+.stMetric {
+    background:var(--white);
+    border:1px solid var(--gray-200);
+    border-radius:12px;
+    padding:1rem 1.25rem;
+    box-shadow:0 2px 8px rgba(8,36,74,0.04);
+}
+.stMetric:hover {border-color:var(--gold-light);}
+
+.stExpander {
+    border:1px solid var(--gray-200) !important;
+    border-radius:12px !important;
+    background:var(--white) !important;
+}
+.stExpander summary {font-weight:600;color:var(--navy);}
+
+header[data-testid="stHeader"] {background:transparent;}
+footer {visibility:hidden;}
+
+.block-container {padding-top:1.5rem;padding-bottom:2rem;max-width:1200px;}
+
+.shimmer-bg {
+    background:linear-gradient(90deg,var(--gray-100) 25%,var(--gray-50) 50%,var(--gray-100) 75%);
+    background-size:200% 100%;
+    animation:shimmer 1.5s infinite;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -78,20 +212,34 @@ def load_default_configs():
 
 load_default_configs()
 
-# ─── Header ───
-st.title("🍎 PAE: Certificado → Cobertura")
-st.caption("UT Alianza Integral • Programa de Alimentación Escolar")
+# ─── Header con logo y animación ───
+st.markdown("""
+<div class="animate-in" style="text-align:center;padding:1rem 0;">
+    <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(231,181,42,0.3);">
+            <span style="font-size:24px;color:var(--navy);">🍎</span>
+        </div>
+        <div>
+            <h1 style="margin:0;font-size:1.75rem;font-weight:700;color:var(--navy);letter-spacing:-0.5px;">PAE Automatización</h1>
+            <p style="margin:2px 0 0 0;font-size:0.9rem;color:var(--gray-600);">Certificado → Cobertura</p>
+        </div>
+    </div>
+    <p style="margin:8px 0 0 0;font-size:0.85rem;color:var(--gray-600);">UT Alianza Integral • Programa de Alimentación Escolar</p>
+</div>
+""", unsafe_allow_html=True)
 
-# ─── Stepper visual ───
+# ─── Stepper visual con animación ───
+st.markdown('<div class="animate-in animate-delay-1" style="margin-top:1rem;">', unsafe_allow_html=True)
 cols = st.columns(4)
 steps = [
-    ("1️⃣ Subir archivos", 1),
-    ("2️⃣ Revisar datos", 2),
-    ("3️⃣ Tarifas", 3),
-    ("4️⃣ Descargar", 4),
+    ("Subir archivos", 1),
+    ("Revisar datos", 2),
+    ("Tarifas", 3),
+    ("Descargar", 4),
 ]
 for col, (label, n) in zip(cols, steps):
     col.markdown(step_badge(n, label), unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
@@ -99,11 +247,14 @@ st.divider()
 # PASO 1: SUBIR ARCHIVOS
 # ═══════════════════════════════════════════
 if st.session_state.step == 1:
+    st.markdown('<div class="animate-in animate-delay-2">', unsafe_allow_html=True)
     st.markdown("### 📁 Paso 1: Subir los dos archivos Excel")
+    st.caption("Arrastra o selecciona los archivos • Se procesarán automáticamente")
+    st.markdown('</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="card card-gold animate-in animate-delay-2">', unsafe_allow_html=True)
         st.markdown("**📄 Plantilla Certificado**")
         st.caption("Una hoja por colegio • Meses: Julio, Agosto, etc.")
         cert_file = st.file_uploader(
@@ -113,11 +264,11 @@ if st.session_state.step == 1:
             help="Ej: 2_CERTIFICACIONES_MES_DE_JULIO.xlsx"
         )
         if cert_file:
-            st.success(f"✅ {cert_file.name} ({cert_file.size/1024:.0f} KB)")
+            st.markdown(f'<div class="success-box">✅ {cert_file.name} <span style="color:var(--gray-600);">({cert_file.size/1024:.0f} KB)</span></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown('<div class="card card-gold animate-in animate-delay-3">', unsafe_allow_html=True)
         st.markdown("**📋 Plantilla Cobertura**")
         st.caption("Hoja 'JULIO' con fórmulas y formato listo")
         cob_file = st.file_uploader(
@@ -127,7 +278,7 @@ if st.session_state.step == 1:
             help="Ej: 3_COBERTURA_EJECUTADA_JULIO_2026.xlsx"
         )
         if cob_file:
-            st.success(f"✅ {cob_file.name} ({cob_file.size/1024:.0f} KB)")
+            st.markdown(f'<div class="success-box">✅ {cob_file.name} <span style="color:var(--gray-600);">({cob_file.size/1024:.0f} KB)</span></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.divider()
@@ -139,12 +290,12 @@ if st.session_state.step == 1:
             tarifas_file = st.file_uploader("tarifas.csv", type=['csv'], help="Grupos de tarifa por nivel A-D")
             if tarifas_file:
                 st.session_state.tarifas_df = pd.read_csv(tarifas_file)
-                st.success("Tarifas personalizadas cargadas")
+                st.markdown('<div class="success-box">✅ Tarifas personalizadas cargadas</div>', unsafe_allow_html=True)
         with c2:
             map_file = st.file_uploader("colegios_tarifas.csv", type=['csv'], help="DANE → grupo_tarifa")
             if map_file:
                 st.session_state.colegios_tarifas_df = pd.read_csv(map_file, comment='#')
-                st.success("Mapeo colegio-tarifa cargado")
+                st.markdown('<div class="success-box">✅ Mapeo colegio-tarifa cargado</div>', unsafe_allow_html=True)
     
     if cert_file and cob_file:
         if st.button("🚀 Procesar y Continuar", type="primary", use_container_width=True):
@@ -193,7 +344,10 @@ if st.session_state.step == 1:
 # PASO 2: REVISAR Y EDITAR
 # ═══════════════════════════════════════════
 elif st.session_state.step == 2:
+    st.markdown('<div class="animate-in animate-delay-2">', unsafe_allow_html=True)
     st.markdown("### 📋 Paso 2: Revisar y corregir datos")
+    st.caption("Edita directamente en la tabla • Celdas vacías = 0 • Los totales se recalculan solos en Excel")
+    st.markdown('</div>', unsafe_allow_html=True)
     
     if st.session_state.cobertura_df is None or st.session_state.cobertura_df.empty:
         st.warning("No hay datos. Vuelve al Paso 1.")
@@ -230,7 +384,7 @@ elif st.session_state.step == 2:
         show_cols = [c for c in show_cols if c in df_show.columns]
         
         # Editor
-        st.caption("✏️ **Edita directamente en la tabla** • Celdas vacías = 0 • Los totales se recalculan solos en Excel")
+        st.markdown('<div class="card animate-in animate-delay-2">', unsafe_allow_html=True)
         edited = st.data_editor(
             df_show[show_cols],
             use_container_width=True,
@@ -246,6 +400,7 @@ elif st.session_state.step == 2:
             },
             key="data_editor"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Detectar cambios
         if not edited.equals(df_show[show_cols]):
@@ -272,7 +427,7 @@ elif st.session_state.step == 2:
                                 ws.cell(row=fila, column=col_idx, value=int(val))
                 wb.save(st.session_state.output_file)
                 st.session_state.edited = False
-                st.success("✅ Guardado")
+                st.markdown('<div class="success-box">✅ Cambios guardados</div>', unsafe_allow_html=True)
         with col3:
             if st.button("Continuar →", type="primary", use_container_width=True):
                 st.session_state.step = 3; st.rerun()
@@ -296,8 +451,10 @@ elif st.session_state.step == 2:
 # PASO 3: TARIFAS
 # ═══════════════════════════════════════════
 elif st.session_state.step == 3:
+    st.markdown('<div class="animate-in animate-delay-2">', unsafe_allow_html=True)
     st.markdown("### 💰 Paso 3: Asignar grupo de tarifa por colegio")
     st.caption("Cada grupo tiene precios distintos. Ver tabla de referencia abajo.")
+    st.markdown('</div>', unsafe_allow_html=True)
     
     if not st.session_state.colegios_data:
         st.warning("Sin datos. Vuelve al Paso 1.")
@@ -331,6 +488,7 @@ elif st.session_state.step == 3:
         
         map_df = pd.DataFrame(rows)
         
+        st.markdown('<div class="card animate-in animate-delay-2">', unsafe_allow_html=True)
         edited_map = st.data_editor(
             map_df,
             use_container_width=True,
@@ -342,24 +500,30 @@ elif st.session_state.step == 3:
             },
             key="tarifa_editor"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
-        if st.button("💾 Guardar y continuar", type="primary", use_container_width=True):
-            out = edited_map[['DANE', 'Grupo']].rename(columns={'Grupo': 'grupo_tarifa'})
-            out.to_csv("colegios_tarifas.csv", index=False)
-            st.session_state.tarifas_mapping = dict(zip(out['DANE'], out['grupo_tarifa']))
-            st.session_state.colegios_tarifas_df = out
-            st.success("✅ Tarifas guardadas")
-            st.session_state.step = 4
-            st.rerun()
-        
-        if st.button("← Volver", use_container_width=True):
-            st.session_state.step = 2; st.rerun()
+        col1, col2 = st.columns([1,1])
+        with col1:
+            if st.button("← Volver", use_container_width=True):
+                st.session_state.step = 2; st.rerun()
+        with col2:
+            if st.button("💾 Guardar y continuar", type="primary", use_container_width=True):
+                out = edited_map[['DANE', 'Grupo']].rename(columns={'Grupo': 'grupo_tarifa'})
+                out.to_csv("colegios_tarifas.csv", index=False)
+                st.session_state.tarifas_mapping = dict(zip(out['DANE'], out['grupo_tarifa']))
+                st.session_state.colegios_tarifas_df = out
+                st.markdown('<div class="success-box">✅ Tarifas guardadas</div>', unsafe_allow_html=True)
+                st.session_state.step = 4
+                st.rerun()
 
 # ═══════════════════════════════════════════
 # PASO 4: DESCARGAR
 # ═══════════════════════════════════════════
 elif st.session_state.step == 4:
+    st.markdown('<div class="animate-in animate-delay-2">', unsafe_allow_html=True)
     st.markdown("### 📥 Paso 4: Descargar archivo final")
+    st.caption("El archivo está listo con todas las fórmulas y formatos conservados")
+    st.markdown('</div>', unsafe_allow_html=True)
     
     if st.session_state.output_file and Path(st.session_state.output_file).exists():
         with open(st.session_state.output_file, 'rb') as f:
@@ -367,6 +531,7 @@ elif st.session_state.step == 4:
         
         st.markdown('<div class="success-box">✅ Archivo listo para descargar</div>', unsafe_allow_html=True)
         
+        st.markdown('<div class="card card-gold animate-in animate-delay-2">', unsafe_allow_html=True)
         st.download_button(
             "⬇️ Descargar COBERTURA_FINAL.xlsx",
             data=data,
@@ -375,14 +540,17 @@ elif st.session_state.step == 4:
             type="primary",
             use_container_width=True
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         st.divider()
         
         # Resumen final
+        st.markdown('<div class="animate-in animate-delay-3">', unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
         c1.metric("Colegios procesados", len(st.session_state.colegios_data))
         c2.metric("Filas en Cobertura", len(st.session_state.cobertura_df) if st.session_state.cobertura_df is not None else 0)
         c3.metric("Grupos de tarifa usados", len(set(st.session_state.tarifas_mapping.values())))
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Log
         log_path = Path(st.session_state.output_file).with_name(
