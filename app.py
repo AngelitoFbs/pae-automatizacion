@@ -428,29 +428,29 @@ if st.session_state.step == 1:
             st.markdown('<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><h3>Sin archivo</h3><p>Sube la Cobertura (.xlsx)</p></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
-st.divider()
-        
-        # Configuración opcional en expander
-        with st.expander("⚙️ Configuración avanzada (opcional)"):
-            c1, c2 = st.columns(2)
-            with c1:
-                tarifas_file = st.file_uploader("tarifas.csv", type=['csv'], help="Grupos de tarifa por nivel A-D")
-                if tarifas_file:
-                    st.session_state.tarifas_df = pd.read_csv(tarifas_file)
-                    st.markdown('<div class="success-box">✅ Tarifas personalizadas cargadas</div>', unsafe_allow_html=True)
-            with c2:
-                map_file = st.file_uploader("colegios_tarifas.csv", type=['csv'], help="DANE → grupo_tarifa")
-                if map_file:
-                    st.session_state.colegios_tarifas_df = pd.read_csv(map_file, comment='#')
-                    st.markdown('<div class="success-box">✅ Mapeo colegio-tarifa cargado</div>', unsafe_allow_html=True)
-        
-        # Keyboard shortcuts hint
-        st.markdown("""
-        <div style="text-align:center;padding:1rem;color:var(--gray-500);font-size:0.8rem;">
-            <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">Enter</kbd> Procesar&nbsp;&nbsp;
-            <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">←</kbd> / <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">→</kbd> Navegar pasos
-        </div>
-        """, unsafe_allow_html=True)
+    st.divider()
+    
+    # Configuración opcional en expander
+    with st.expander("⚙️ Configuración avanzada (opcional)"):
+        c1, c2 = st.columns(2)
+        with c1:
+            tarifas_file = st.file_uploader("tarifas.csv", type=['csv'], help="Grupos de tarifa por nivel A-D")
+            if tarifas_file:
+                st.session_state.tarifas_df = pd.read_csv(tarifas_file)
+                st.markdown('<div class="success-box">✅ Tarifas personalizadas cargadas</div>', unsafe_allow_html=True)
+        with c2:
+            map_file = st.file_uploader("colegios_tarifas.csv", type=['csv'], help="DANE → grupo_tarifa")
+            if map_file:
+                st.session_state.colegios_tarifas_df = pd.read_csv(map_file, comment='#')
+                st.markdown('<div class="success-box">✅ Mapeo colegio-tarifa cargado</div>', unsafe_allow_html=True)
+    
+    # Keyboard shortcuts hint
+    st.markdown("""
+    <div style="text-align:center;padding:1rem;color:var(--gray-500);font-size:0.8rem;">
+        <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">Enter</kbd> Procesar&nbsp;&nbsp;
+        <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">←</kbd> / <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">→</kbd> Navegar pasos
+    </div>
+    """, unsafe_allow_html=True)
     
     if cert_file and cob_file:
         if st.button("🚀 Procesar y Continuar", type="primary", use_container_width=True):
