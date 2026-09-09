@@ -21,7 +21,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ─── Estilos con paleta FOMBISOL + Animaciones ───
+# ─── Estilos con paleta FOMBISOL + Animaciones + UX mejorado ───
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -33,12 +33,16 @@ st.markdown("""
     --gold-light: #F2C94C;
     --white: #FFFFFF;
     --green: #2E9B3F;
+    --green-light: #4ade80;
     --gray-50: #F8FAFC;
     --gray-100: #F1F5F9;
     --gray-200: #E2E8F0;
     --gray-300: #CBD5E1;
+    --gray-400: #94A3B8;
     --gray-600: #475569;
     --gray-700: #334155;
+    --red: #EF4444;
+    --red-light: #F87171;
 }
 
 * {font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;}
@@ -49,21 +53,42 @@ st.markdown("""
 @keyframes slideInRight {from {opacity:0;transform:translateX(30px);} to {opacity:1;transform:translateX(0);}}
 @keyframes pulse {0%,100% {box-shadow:0 0 0 0 rgba(231,181,42,0.4);} 50% {box-shadow:0 0 0 12px rgba(231,181,42,0);}}
 @keyframes shimmer {0% {background-position:-200% 0;} 100% {background-position:200% 0;}}
+@keyframes spin {from {transform:rotate(0deg);} to {transform:rotate(360deg);}}
+@keyframes bounce {0%,100% {transform:translateY(0);} 50% {transform:translateY(-4px);}}
 
 .animate-in {animation:fadeInUp 0.5s ease-out forwards;}
-.animate-delay-1 {animation-delay:0.1s;}
-.animate-delay-2 {animation-delay:0.2s;}
-.animate-delay-3 {animation-delay:0.3s;}
-.animate-delay-4 {animation-delay:0.4s;}
+.animate-delay-1 {animation-delay:0.05s;}
+.animate-delay-2 {animation-delay:0.1s;}
+.animate-delay-3 {animation-delay:0.15s;}
+.animate-delay-4 {animation-delay:0.2s;}
 
 .step-badge {
-    display:inline-flex;align-items:center;gap:6px;
-    padding:8px 16px;border-radius:999px;font-weight:600;font-size:0.85rem;
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 18px;border-radius:999px;font-weight:600;font-size:0.85rem;
     transition:all 0.3s ease;
+    white-space: nowrap;
 }
-.step-done {background:linear-gradient(135deg,var(--green) 0%,#22c55e 100%);color:#fff;box-shadow:0 4px 14px rgba(46,155,63,0.3);}
+.step-badge::before {
+    content: attr(data-step);
+    width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:0.7rem;font-weight:700;
+    background:currentColor;color:var(--white);
+}
+.step-done {background:linear-gradient(135deg,var(--green) 0%,var(--green-light) 100%);color:#fff;box-shadow:0 4px 14px rgba(46,155,63,0.3);}
+.step-done::before {background:var(--white);color:var(--green);}
 .step-active {background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);color:#fff;animation:pulse 2s infinite;box-shadow:0 4px 20px rgba(8,36,74,0.3);}
-.step-pending {background:var(--gray-100);color:var(--gray-600);}
+.step-pending {background:var(--gray-100);color:var(--gray-500);}
+
+.step-progress {
+    height:4px;background:var(--gray-200);border-radius:2px;margin:0.5rem 0 1rem;
+    overflow:hidden;position:relative;
+}
+.step-progress::after {
+    content:'';position:absolute;top:0;left:0;height:100%;
+    background:linear-gradient(90deg,var(--gold) 0%,var(--gold-light) 100%);
+    border-radius:2px;transition:width 0.5s ease;
+}
 
 .card {
     background:var(--white);
@@ -76,6 +101,7 @@ st.markdown("""
 }
 .card:hover {border-color:var(--gold-light);box-shadow:0 8px 24px rgba(8,36,74,0.08);transform:translateY(-2px);}
 .card-gold {border:2px solid var(--gold);background:linear-gradient(135deg,#fffdf5 0%,#ffffff 100%);}
+.card-glass {background:rgba(255,255,255,0.9);backdrop-filter:blur(8px);border:1px solid rgba(231,181,42,0.2);}
 
 .metric-big {font-size:2.5rem;font-weight:700;color:var(--navy);background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 
@@ -84,6 +110,7 @@ st.markdown("""
     font-weight:600 !important;
     transition:all 0.2s ease !important;
     border:none !important;
+    position:relative;overflow:hidden;
 }
 .stButton>button[kind="primary"] {
     background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%) !important;
@@ -94,6 +121,7 @@ st.markdown("""
     transform:translateY(-2px);
     box-shadow:0 8px 24px rgba(231,181,42,0.4) !important;
 }
+.stButton>button[kind="primary"]:active {transform:translateY(0);}
 .stButton>button[kind="secondary"] {
     background:var(--white) !important;
     color:var(--navy) !important;
@@ -103,6 +131,7 @@ st.markdown("""
     border-color:var(--gold) !important;
     background:linear-gradient(135deg,#fffdf5 0%,#ffffff 100%) !important;
 }
+.stButton>button:disabled {opacity:0.5;cursor:not-allowed;}
 
 .warning-box {
     background:linear-gradient(135deg,#fff8ed 0%,#fffdf5 100%);
@@ -114,6 +143,20 @@ st.markdown("""
 .success-box {
     background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);
     border-left:4px solid var(--green);
+    padding:1rem 1.25rem;
+    border-radius:12px;
+    margin:1rem 0;
+}
+.error-box {
+    background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);
+    border-left:4px solid var(--red);
+    padding:1rem 1.25rem;
+    border-radius:12px;
+    margin:1rem 0;
+}
+.info-box {
+    background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);
+    border-left:4px solid var(--navy);
     padding:1rem 1.25rem;
     border-radius:12px;
     margin:1rem 0;
@@ -134,6 +177,8 @@ st.markdown("""
     border-color:var(--gold) !important;
     box-shadow:0 0 0 4px rgba(231,181,42,0.15) !important;
 }
+[data-testid="stFileUploader"] section {padding:0 !important;}
+[data-testid="stFileUploader"] small {color:var(--gray-600) !important;}
 
 [data-testid="stDataFrame"] {
     border-radius:12px !important;
@@ -167,6 +212,59 @@ footer {visibility:hidden;}
     background-size:200% 100%;
     animation:shimmer 1.5s infinite;
 }
+
+.tooltip {
+    position:relative;cursor:help;
+}
+.tooltip:hover::after {
+    content:attr(data-tip);
+    position:absolute;bottom:125%;left:50%;transform:translateX(-50%);
+    background:var(--navy);color:var(--white);
+    padding:6px 10px;border-radius:6px;font-size:0.75rem;
+    white-space:nowrap;z-index:100;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    animation:fadeInUp 0.2s ease;
+}
+.tooltip:hover::before {
+    content:'';position:absolute;bottom:115%;left:50%;transform:translateX(-50%);
+    border:6px solid transparent;border-top-color:var(--navy);
+}
+
+.loading-overlay {
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:rgba(255,255,255,0.95);z-index:9999;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:1rem;
+}
+.loading-spinner {
+    width:48px;height:48px;border:4px solid var(--gray-200);
+    border-top-color:var(--gold);border-radius:50%;
+    animation:spin 1s linear infinite;
+}
+.loading-dots {display:flex;gap:6px;}
+.loading-dots span {
+    width:10px;height:10px;border-radius:50%;background:var(--gold);
+    animation:bounce 1.4s ease-in-out infinite both;
+}
+.loading-dots span:nth-child(2){animation-delay:0.2s;}
+.loading-dots span:nth-child(3){animation-delay:0.4s;}
+
+.empty-state {
+    text-align:center;padding:3rem 2rem;color:var(--gray-500);
+}
+.empty-state svg {width:80px;height:80px;margin-bottom:1rem;opacity:0.5;}
+.empty-state h3 {margin:0 0 0.5rem;color:var(--navy);font-size:1.25rem;}
+.empty-state p {margin:0;color:var(--gray-600);}
+
+@media (max-width: 768px) {
+    .block-container {padding:1rem;}
+    .step-badge {padding:8px 12px;font-size:0.75rem;}
+    .step-badge::before {width:18px;height:18px;font-size:0.65rem;}
+    .card {padding:1rem;border-radius:12px;}
+    .stButton>button {padding:0.6rem 1rem;font-size:0.9rem;}
+    [data-testid="stFileUploader"] {padding:1.5rem !important;}
+    .stMetric {padding:0.75rem 1rem;}
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -194,7 +292,7 @@ NIVEL_COLS = {
 
 def step_badge(n, label):
     cls = 'step-done' if st.session_state.step > n else ('step-active' if st.session_state.step == n else 'step-pending')
-    return f'<span class="step-badge {cls}">Paso {n}</span> {label}'
+    return f'<span class="step-badge {cls}" data-step="{n}">{label}</span>'
 
 def load_default_configs():
     if st.session_state.get('tarifas_df') is None and Path("tarifas.csv").exists():
@@ -212,14 +310,17 @@ def load_default_configs():
 
 load_default_configs()
 
+# ─── Progress bar helper ───
+progress_pct = {1: 0, 2: 33, 3: 66, 4: 100}.get(st.session_state.step, 0)
+
 # ─── Header con logo y animación ───
-st.markdown("""
-<div class="animate-in" style="text-align:center;padding:1rem 0;">
+st.markdown(f"""
+<div class="animate-in" style="text-align:center;padding:1rem 0 0.5rem;">
     <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:8px;">
         <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(231,181,42,0.3);">
             <span style="font-size:24px;color:var(--navy);">🍎</span>
         </div>
-        <div>
+        <div style="text-align:left;">
             <h1 style="margin:0;font-size:1.75rem;font-weight:700;color:var(--navy);letter-spacing:-0.5px;">PAE Automatización</h1>
             <p style="margin:2px 0 0 0;font-size:0.9rem;color:var(--gray-600);">Certificado → Cobertura</p>
         </div>
@@ -228,18 +329,60 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ─── Stepper visual con animación ───
-st.markdown('<div class="animate-in animate-delay-1" style="margin-top:1rem;">', unsafe_allow_html=True)
-cols = st.columns(4)
-steps = [
-    ("Subir archivos", 1),
-    ("Revisar datos", 2),
-    ("Tarifas", 3),
-    ("Descargar", 4),
-]
-for col, (label, n) in zip(cols, steps):
-    col.markdown(step_badge(n, label), unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+# ─── Stepper visual con progress bar ───
+st.markdown(f'''
+<div class="animate-in animate-delay-1" style="margin-top:0.5rem;">
+    <div class="step-progress" style="--progress:{progress_pct}%;">
+        <div style="width:{progress_pct}%;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span class="step-badge step-done" data-step="1">Subir archivos</span>
+        <span class="step-badge step-done" data-step="2">Revisar datos</span>
+        <span class="step-badge step-done" data-step="3">Tarifas</span>
+        <span class="step-badge step-done" data-step="4">Descargar</span>
+    </div>
+</div>
+''', unsafe_allow_html=True)
+
+# Actualizar clases según step actual
+if st.session_state.step == 1:
+    stepper_html = '''
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span class="step-badge step-active" data-step="1">Subir archivos</span>
+        <span class="step-badge step-pending" data-step="2">Revisar datos</span>
+        <span class="step-badge step-pending" data-step="3">Tarifas</span>
+        <span class="step-badge step-pending" data-step="4">Descargar</span>
+    </div>
+    '''
+elif st.session_state.step == 2:
+    stepper_html = '''
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span class="step-badge step-done" data-step="1">Subir archivos</span>
+        <span class="step-badge step-active" data-step="2">Revisar datos</span>
+        <span class="step-badge step-pending" data-step="3">Tarifas</span>
+        <span class="step-badge step-pending" data-step="4">Descargar</span>
+    </div>
+    '''
+elif st.session_state.step == 3:
+    stepper_html = '''
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span class="step-badge step-done" data-step="1">Subir archivos</span>
+        <span class="step-badge step-done" data-step="2">Revisar datos</span>
+        <span class="step-badge step-active" data-step="3">Tarifas</span>
+        <span class="step-badge step-pending" data-step="4">Descargar</span>
+    </div>
+    '''
+else:
+    stepper_html = '''
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span class="step-badge step-done" data-step="1">Subir archivos</span>
+        <span class="step-badge step-done" data-step="2">Revisar datos</span>
+        <span class="step-badge step-done" data-step="3">Tarifas</span>
+        <span class="step-badge step-active" data-step="4">Descargar</span>
+    </div>
+    '''
+
+st.markdown(f'<div class="animate-in animate-delay-1" style="margin-top:1rem;">{stepper_html}</div>', unsafe_allow_html=True)
 
 st.divider()
 
@@ -255,7 +398,7 @@ if st.session_state.step == 1:
     col1, col2 = st.columns(2)
     with col1:
         st.markdown('<div class="card card-gold animate-in animate-delay-2">', unsafe_allow_html=True)
-        st.markdown("**📄 Plantilla Certificado**")
+        st.markdown("**📄 Plantilla Certificado** <span class='tooltip' data-tip='Archivo con una hoja por colegio, firmado por el rector'></span>", unsafe_allow_html=True)
         st.caption("Una hoja por colegio • Meses: Julio, Agosto, etc.")
         cert_file = st.file_uploader(
             "Certificado",
@@ -265,11 +408,13 @@ if st.session_state.step == 1:
         )
         if cert_file:
             st.markdown(f'<div class="success-box">✅ {cert_file.name} <span style="color:var(--gray-600);">({cert_file.size/1024:.0f} KB)</span></div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><h3>Sin archivo</h3><p>Sube el Certificado (.xlsx)</p></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
         st.markdown('<div class="card card-gold animate-in animate-delay-3">', unsafe_allow_html=True)
-        st.markdown("**📋 Plantilla Cobertura**")
+        st.markdown("**📋 Plantilla Cobertura** <span class='tooltip' data-tip='Plantilla base con fórmulas y formato predefinido (hoja JULIO)'></span>", unsafe_allow_html=True)
         st.caption("Hoja 'JULIO' con fórmulas y formato listo")
         cob_file = st.file_uploader(
             "Cobertura",
@@ -279,23 +424,33 @@ if st.session_state.step == 1:
         )
         if cob_file:
             st.markdown(f'<div class="success-box">✅ {cob_file.name} <span style="color:var(--gray-600);">({cob_file.size/1024:.0f} KB)</span></div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><h3>Sin archivo</h3><p>Sube la Cobertura (.xlsx)</p></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
-    st.divider()
-    
-    # Configuración opcional en expander
-    with st.expander("⚙️ Configuración avanzada (opcional)"):
-        c1, c2 = st.columns(2)
-        with c1:
-            tarifas_file = st.file_uploader("tarifas.csv", type=['csv'], help="Grupos de tarifa por nivel A-D")
-            if tarifas_file:
-                st.session_state.tarifas_df = pd.read_csv(tarifas_file)
-                st.markdown('<div class="success-box">✅ Tarifas personalizadas cargadas</div>', unsafe_allow_html=True)
-        with c2:
-            map_file = st.file_uploader("colegios_tarifas.csv", type=['csv'], help="DANE → grupo_tarifa")
-            if map_file:
-                st.session_state.colegios_tarifas_df = pd.read_csv(map_file, comment='#')
-                st.markdown('<div class="success-box">✅ Mapeo colegio-tarifa cargado</div>', unsafe_allow_html=True)
+st.divider()
+        
+        # Configuración opcional en expander
+        with st.expander("⚙️ Configuración avanzada (opcional)"):
+            c1, c2 = st.columns(2)
+            with c1:
+                tarifas_file = st.file_uploader("tarifas.csv", type=['csv'], help="Grupos de tarifa por nivel A-D")
+                if tarifas_file:
+                    st.session_state.tarifas_df = pd.read_csv(tarifas_file)
+                    st.markdown('<div class="success-box">✅ Tarifas personalizadas cargadas</div>', unsafe_allow_html=True)
+            with c2:
+                map_file = st.file_uploader("colegios_tarifas.csv", type=['csv'], help="DANE → grupo_tarifa")
+                if map_file:
+                    st.session_state.colegios_tarifas_df = pd.read_csv(map_file, comment='#')
+                    st.markdown('<div class="success-box">✅ Mapeo colegio-tarifa cargado</div>', unsafe_allow_html=True)
+        
+        # Keyboard shortcuts hint
+        st.markdown("""
+        <div style="text-align:center;padding:1rem;color:var(--gray-500);font-size:0.8rem;">
+            <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">Enter</kbd> Procesar&nbsp;&nbsp;
+            <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">←</kbd> / <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">→</kbd> Navegar pasos
+        </div>
+        """, unsafe_allow_html=True)
     
     if cert_file and cob_file:
         if st.button("🚀 Procesar y Continuar", type="primary", use_container_width=True):
@@ -590,3 +745,25 @@ elif st.session_state.step == 4:
 # ─── Footer ───
 st.divider()
 st.caption("PAE Automatización v1.1 | UT Alianza Integral | Dudas: soporte@utalianzaintegral.gov.co")
+
+# ─── Keyboard shortcuts ───
+st.markdown("""
+<script>
+document.addEventListener('keydown', function(e) {
+    // Enter para procesar en paso 1
+    if (e.key === 'Enter' && !e.target.matches('input, textarea, select')) {
+        const btn = document.querySelector('button[kind="primary"]:not([disabled])');
+        if (btn && btn.textContent.includes('Procesar')) btn.click();
+    }
+    // Flechas para navegar
+    if (e.key === 'ArrowRight' && !e.target.matches('input, textarea, select')) {
+        const btn = document.querySelector('button[kind="primary"]:not([disabled])');
+        if (btn && (btn.textContent.includes('Continuar') || btn.textContent.includes('Guardar'))) btn.click();
+    }
+    if (e.key === 'ArrowLeft' && !e.target.matches('input, textarea, select')) {
+        const btn = document.querySelector('button[kind="secondary"]');
+        if (btn && btn.textContent.includes('Volver')) btn.click();
+    }
+});
+</script>
+""", unsafe_allow_html=True)
