@@ -125,6 +125,20 @@ footer, #MainMenu {visibility: hidden;}
 if 'active_module' not in st.session_state:
     st.session_state.active_module = 'kelly_primo'
 
+# Cleanup session state when switching modules
+def _cleanup_module_state(old_module: str, new_module: str):
+    """Limpia el estado del módulo anterior al cambiar."""
+    prefixes_to_clear = [
+        f'{old_module}_output',
+        f'{old_module}_engine',
+        f'{old_module}_writer',
+        f'{old_module}_df',
+        f'{old_module}_cob_path',
+    ]
+    for key in prefixes_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+
 # ─── Sidebar Navigation ───
 with st.sidebar:
     st.markdown("""
@@ -183,20 +197,6 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
-
-# Cleanup session state when switching modules
-def _cleanup_module_state(old_module: str, new_module: str):
-    """Limpia el estado del módulo anterior al cambiar."""
-    prefixes_to_clear = [
-        f'{old_module}_output',
-        f'{old_module}_engine',
-        f'{old_module}_writer',
-        f'{old_module}_df',
-        f'{old_module}_cob_path',
-    ]
-    for key in prefixes_to_clear:
-        if key in st.session_state:
-            del st.session_state[key]
 
 # Render active module
 if st.session_state.active_module == 'kelly_primo':
