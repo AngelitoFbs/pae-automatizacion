@@ -44,7 +44,7 @@ class CertificadoReader:
     
     CELDAS_FIJAS = {
         'nombre': 'B7',
-        'codigo_dane': 'I7',
+        'codigo_dane': 'I7',  # Columna I (9) - DANE completo 12 dígitos
         'departamento': 'B8',
         'municipio': 'B9',
         'fecha_desde': 'C10',
@@ -224,36 +224,31 @@ class CoberturaWriter:
                         self.name_to_row[norm] = row
 
 def find_or_create_row(self, dane: str, nombre: str) -> Tuple[int, bool]:
-        """Encuentra fila existente por DANE o crea nueva.
+        """Encuentra fila existente por NOMBRE (clave primaria) o crea nueva.
         
-        Usa DANE como clave primaria (identificador único), 
-        cae a matching por nombre solo si DANE no existe.
+        Usa NOMBRE normalizado como clave primaria (más robusto que DANE 
+        porque los formatos difieren entre Certificado y Cobertura).
         """
-        # 1. Buscar por DANE exacto (clave primaria) - MÁS ROBUSTO
-        for row in range(DATA_START_ROW, self.ws.max_row + 1):
-            dane_cell = self.ws.cell(row=row, column=DANE_COL)
-            if dane_cell.value and str(dane_cell.value).strip() == dane:
-                return row, False
-
-        # 2. Fallback: matching por nombre normalizado (exacto)
         norm_nombre = self._normalize_name(nombre)
+
+        # 1. Match exacto por nombre normalizado (clave primaria)
         if norm_nombre in self.name_to_row:
             row = self.name_to_row[norm_nombre]
             self._safe_write_cell(row, DANE_COL, dane)
             return row, False
 
-        # 3. Fallback fuzzy (substring) - menos confiable
+        # 2. Fallback fuzzy (substring) - menos confiable
         for norm_name, row in self.name_to_row.items():
             if norm_nombre in norm_name or norm_name in norm_nombre:
                 self._safe_write_cell(row, DANE_COL, dane)
                 return row, True
 
-        # 4. Crear nueva fila al final
+        # 3. Crear nueva fila al final
         new_row = self.ws.max_row + 1
         self._safe_write_cell(new_row, 1, new_row - DATA_START_ROW + 1)
         self._safe_write_cell(new_row, NAME_COL, nombre)
         self._safe_write_cell(new_row, DANE_COL, dane)
-        self.name_to_row[self._normalize_name(nombre)] = new_row
+        self.name_to_row[norm_nombre] = new_row
         return new_row, True
 
     def write_colegio(self, colegio: ColegioData) -> List[dict]:

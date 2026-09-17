@@ -42,7 +42,7 @@ NIVEL_COLS = {
 VALOR_TOTAL_COL = 27
 DATA_START_ROW = 4
 NAME_COL = 2   # Columna B: Nombre del colegio
-DANE_COL = 3   # Columna C: Código DANE (era 28, corregido a 3 según template real)
+DANE_COL = 3   # Columna C: Código DANE (template tiene esta columna vacía inicialmente)
 
 # ─── Rutas base ───
 BASE_DIR = Path(__file__).parent.parent.parent.parent
