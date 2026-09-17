@@ -193,6 +193,17 @@ class CoberturaWriter:
         self.wb = openpyxl.load_workbook(template_path)
         self.ws = self.wb.active
         self.name_to_row: Dict[str, int] = {}
+        # Detectar celdas combinadas para evitar escribir en ellas
+        self._merged_ranges = set()
+        for merged_range in self.ws.merged_cells.ranges:
+            for row in range(merged_range.min_row, merged_range.max_row + 1):
+                for col in range(merged_range.min_col, merged_range.max_col + 1):
+                    self._merged_ranges.add((row, col))
+        self._build_name_map()
+        self.template_path = Path(template_path)
+        self.wb = openpyxl.load_workbook(template_path)
+        self.ws = self.wb.active
+        self.name_to_row: Dict[str, int] = {}
         self._build_name_map()
 
     def _normalize_name(self, nombre: str) -> str:
@@ -218,19 +229,19 @@ class CoberturaWriter:
         # Match exacto normalizado
         if norm_nombre in self.name_to_row:
             row = self.name_to_row[norm_nombre]
-            self.ws.cell(row=row, column=DANE_COL, value=dane)
+            self._safe_write_cell(row, DANE_COL, dane)
             return row, False
 
         # Match fuzzy (substring)
         for norm_name, row in self.name_to_row.items():
             if norm_nombre in norm_name or norm_name in norm_nombre:
-                self.ws.cell(row=row, column=DANE_COL, value=dane)
+                self._safe_write_cell(row, DANE_COL, dane)
                 return row, True
 
         # Crear nueva fila
         new_row = self.ws.max_row + 1
-        self.ws.cell(row=new_row, column=1, value=new_row - DATA_START_ROW + 1)
-        self.ws.cell(row=new_row, column=NAME_COL, value=nombre)
+        self._safe_write_cell(new_row, 1, new_row - DATA_START_ROW + 1)
+        self._safe_write_cell(new_row, NAME_COL, nombre)
         self.ws.cell(row=new_row, column=DANE_COL, value=dane)
         self.name_to_row[norm_nombre] = new_row
         return new_row, True
@@ -277,6 +288,11 @@ class CoberturaWriter:
 
         return rows_written
 
+    def _safe_write_cell(self, row: int, col: int, value: Any):
+        """Escribe valor en celda solo si no es una MergedCell."""
+        if (row, col) not in self._merged_ranges:
+            self.ws.cell(row=row, column=col, value=value)
+
     def _write_fila_am(self, row: int, cajm: Dict) -> dict:
         data = {'fila': row, 'dane': '', 'nombre': '', 'tipo': 'AM'}
         for nivel in ['A', 'B', 'C', 'D']:
@@ -285,10 +301,10 @@ class CoberturaWriter:
                 rac_dia = cajm[nivel].get('raciones_dia', 0)
                 dias = cajm[nivel].get('dias', 0)
                 if rac_dia > 0:
-                    self.ws.cell(row=row, column=cols['AM'], value=rac_dia)
+                    self._safe_write_cell(row, cols['AM'], rac_dia)
                     data[f'{nivel}_AM'] = rac_dia
                 if dias > 0:
-                    self.ws.cell(row=row, column=cols['Días'], value=dias)
+                    self._safe_write_cell(row, cols['Días'], dias)
                     data[f'{nivel}_Días'] = dias
         return data
 
@@ -300,10 +316,10 @@ class CoberturaWriter:
                 rac_dia = cajt[nivel].get('raciones_dia', 0)
                 dias = cajt[nivel].get('dias', 0)
                 if rac_dia > 0:
-                    self.ws.cell(row=row, column=cols['PM'], value=rac_dia)
+                    self._safe_write_cell(row, cols['PM'], rac_dia)
                     data[f'{nivel}_PM'] = rac_dia
                 if dias > 0:
-                    self.ws.cell(row=row, column=cols['Días'], value=dias)
+                    self._safe_write_cell(row, cols['Días'], dias)
                     data[f'{nivel}_Días'] = dias
         return data
 
@@ -314,20 +330,22 @@ class CoberturaWriter:
             if nivel in cajm:
                 rac_dia = cajm[nivel].get('raciones_dia', 0)
                 if rac_dia > 0:
-                    self.ws.cell(row=row, column=cols['AM'], value=rac_dia)
+                    self._safe_write_cell(row, cols['AM'], rac_dia)
                     data[f'{nivel}_AM'] = rac_dia
             if nivel in cajt:
                 rac_dia = cajt[nivel].get('raciones_dia', 0)
                 if rac_dia > 0:
-                    self.ws.cell(row=row, column=cols['PM'], value=rac_dia)
+                    self._safe_write_cell(row, cols['PM'], rac_dia)
                     data[f'{nivel}_PM'] = rac_dia
             if dias > 0:
-                self.ws.cell(row=row, column=cols['Días'], value=dias)
+                self._safe_write_cell(row, cols['Días'], dias)
                 data[f'{nivel}_Días'] = dias
         return data
 
     def _copy_row_format(self, src_row: int, dst_row: int):
         for col in range(1, self.ws.max_column + 1):
+            if (dst_row, col) in self._merged_ranges:
+                continue
             src = self.ws.cell(row=src_row, column=col)
             dst = self.ws.cell(row=dst_row, column=col)
             if src.has_style:
