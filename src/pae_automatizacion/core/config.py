@@ -10,7 +10,6 @@ OPERADORES = {
         "codigo": "KP",
         "color": "#E7B52A",
         "icon": "👩‍💼",
-        "email": "kelly.primo@pae.gov.co",
         "descripcion": "Operación y supervisión de entrega PAE",
     },
     "laura_jimenez": {
@@ -18,7 +17,6 @@ OPERADORES = {
         "codigo": "LJ",
         "color": "#3B82F6",
         "icon": "📊",
-        "email": "laura.jimenez@pae.gov.co",
         "descripcion": "Consolidación y reporte de cobertura",
     },
 }

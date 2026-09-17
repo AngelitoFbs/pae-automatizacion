@@ -1,13 +1,13 @@
 """Módulo Kelly Primo - Operación y supervisión de entrega PAE"""
 import streamlit as st
 import pandas as pd
-import tempfile
-import os
 from pathlib import Path
 
-# Absolute imports for Streamlit Cloud compatibility
 from pae_automatizacion.core.engine import PAEEngine
 from pae_automatizacion.core.config import OPERADORES, MESES_PAE, get_template_names
+from pae_automatizacion.core.utils import (
+    secure_temp_files, validate_excel_file, safe_save_uploaded_file
+)
 
 OPERADOR_KEY = "kelly_primo"
 OPERADOR = OPERADORES[OPERADOR_KEY]
@@ -38,7 +38,6 @@ def render_kelly_module():
         anio = st.number_input("Año", min_value=2024, max_value=2030, value=2026)
         
         st.divider()
-        st.caption(f"📧 {OPERADOR['email']}")
 
     # Main content
     cert_name, cob_name = get_template_names(mes)
@@ -70,32 +69,44 @@ def render_kelly_module():
         st.markdown('</div>', unsafe_allow_html=True)
 
     if cert_file and cob_file:
-        if st.button("🚀 Procesar y Generar", type="primary", use_container_width=True):
+        # Validar archivos antes de procesar
+        cert_valid, cert_err = validate_excel_file(cert_file.getvalue(), cert_file.name)
+        cob_valid, cob_err = validate_excel_file(cob_file.getvalue(), cob_file.name)
+        
+        if not cert_valid:
+            st.error(f"Certificado inválido: {cert_err}")
+        if not cob_valid:
+            st.error(f"Cobertura inválida: {cob_err}")
+        
+        if cert_valid and cob_valid and st.button("🚀 Procesar y Generar", type="primary", use_container_width=True):
             with st.spinner("Procesando..."):
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tc:
-                    tc.write(cert_file.getvalue()); cert_path = tc.name
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tc:
-                    tc.write(cob_file.getvalue()); cob_path = tc.name
-                try:
-                    engine = PAEEngine(cert_path, cob_path)
-                    engine.procesar()
+                with secure_temp_files(2) as (cert_path, cob_path):
+                    if not safe_save_uploaded_file(cert_file, cert_path):
+                        st.error("Error guardando certificado")
+                        return
+                    if not safe_save_uploaded_file(cob_file, cob_path):
+                        st.error("Error guardando cobertura")
+                        return
                     
-                    out_name = f"{OPERADOR['codigo']}_{mes}_{anio}_cobertura.xlsx"
-                    out_path = str(Path("output") / out_name)
-                    engine.save_output(out_path)
-                    
-                    log_path = str(Path("logs") / f"{OPERADOR['codigo']}_{mes}_{anio}_log.json")
-                    engine.save_log(log_path)
-                    
-                    st.session_state[f'{OPERADOR_KEY}_output'] = out_path
-                    st.session_state[f'{OPERADOR_KEY}_engine'] = engine
-                    st.success(f"✅ Procesado: {len(engine.colegios)} colegios, {len(engine.resultado)} filas")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error: {e}")
-                finally:
-                    try: os.unlink(cert_path); os.unlink(cob_path)
-                    except: pass
+                    try:
+                        engine = PAEEngine(str(cert_path), str(cob_path))
+                        engine.procesar()
+                        
+                        out_name = f"{OPERADOR['codigo']}_{mes}_{anio}_cobertura.xlsx"
+                        out_path = str(Path("output") / out_name)
+                        engine.save_output(out_path)
+                        
+                        log_path = str(Path("logs") / f"{OPERADOR['codigo']}_{mes}_{anio}_log.json")
+                        engine.save_log(log_path)
+                        
+                        st.session_state[f'{OPERADOR_KEY}_output'] = out_path
+                        st.session_state[f'{OPERADOR_KEY}_engine'] = engine
+                        st.success(f"✅ Procesado: {len(engine.colegios)} colegios, {len(engine.resultado)} filas")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error procesando: {e}")
+                        import traceback
+                        st.code(traceback.format_exc())
 
     # Show preview if processed
     if f'{OPERADOR_KEY}_engine' in st.session_state:

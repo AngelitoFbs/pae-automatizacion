@@ -1,11 +1,14 @@
 """Módulo Laura Jiménez - Consolidación y reporte de cobertura PAE"""
 import streamlit as st
 import pandas as pd
+import traceback
 from pathlib import Path
 
-# Absolute imports for Streamlit Cloud compatibility
-from pae_automatizacion.core.engine import PAEEngine
+from pae_automatizacion.core.engine import PAEEngine, CoberturaWriter
 from pae_automatizacion.core.config import OPERADORES, MESES_PAE, get_template_names, NIVEL_COLS
+from pae_automatizacion.core.utils import (
+    secure_temp_files, validate_excel_file, safe_save_uploaded_file
+)
 
 OPERADOR_KEY = "laura_jimenez"
 OPERADOR = OPERADORES[OPERADOR_KEY]
@@ -35,7 +38,6 @@ def render_laura_module():
         anio = st.number_input("Año", min_value=2024, max_value=2030, value=2026)
         
         st.divider()
-        st.caption(f"📧 {OPERADOR['email']}")
 
     cert_name, cob_name = get_template_names(mes)
     
@@ -66,70 +68,82 @@ def render_laura_module():
         st.markdown('</div>', unsafe_allow_html=True)
 
     if cob_file:
-        if cert_file:
-            # Proceso completo con certificado
-            if st.button("🔄 Procesar completo (Cert + Cobertura)", type="primary", use_container_width=True):
-                process_full(st, cert_file, cob_file, mes, anio)
-        else:
+        cob_valid, cob_err = validate_excel_file(cob_file.getvalue(), cob_file.name)
+        if not cob_valid:
+            st.error(f"Cobertura inválida: {cob_err}")
+        
+        if cob_valid and cert_file:
+            cert_valid, cert_err = validate_excel_file(cert_file.getvalue(), cert_file.name)
+            if not cert_valid:
+                st.error(f"Certificado inválido: {cert_err}")
+            
+            if cert_valid:
+                # Proceso completo con certificado
+                if st.button("🔄 Procesar completo (Cert + Cobertura)", type="primary", use_container_width=True):
+                    process_full(cert_file, cob_file, mes, anio)
+        elif cob_valid:
             # Solo abrir cobertura existente para revisión
             if st.button("📋 Abrir Cobertura para revisión", type="primary", use_container_width=True):
-                process_review_only(st, cob_file, mes, anio)
+                process_review_only(cob_file, mes, anio)
+
+    # Show review interface if loaded
+    if f'{OPERADOR_KEY}_writer' in st.session_state:
+        show_review_interface(mes, anio)
 
 
-def process_full(st, cert_file, cob_file, mes, anio):
-    import tempfile, os
+def process_full(cert_file, cob_file, mes, anio):
     with st.spinner("Procesando..."):
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tc:
-            tc.write(cert_file.getvalue()); cert_path = tc.name
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tc:
-            tc.write(cob_file.getvalue()); cob_path = tc.name
-        try:
-            engine = PAEEngine(cert_path, cob_path)
-            engine.procesar()
+        with secure_temp_files(2) as (cert_path, cob_path):
+            if not safe_save_uploaded_file(cert_file, cert_path):
+                st.error("Error guardando certificado")
+                return
+            if not safe_save_uploaded_file(cob_file, cob_path):
+                st.error("Error guardando cobertura")
+                return
             
-            out_name = f"{OPERADOR['codigo']}_{mes}_{anio}_cobertura_final.xlsx"
-            out_path = str(Path("output") / out_name)
-            engine.save_output(out_path)
-            
-            log_path = str(Path("logs") / f"{OPERADOR['codigo']}_{mes}_{anio}_log.json")
-            engine.save_log(log_path)
-            
-            st.session_state[f'{OPERADOR_KEY}_output'] = out_path
-            st.session_state[f'{OPERADOR_KEY}_engine'] = engine
-            st.success(f"✅ Consolidado: {len(engine.colegios)} colegios")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Error: {e}")
-        finally:
-            try: os.unlink(cert_path); os.unlink(cob_path)
-            except: pass
+            try:
+                engine = PAEEngine(str(cert_path), str(cob_path))
+                engine.procesar()
+                
+                out_name = f"{OPERADOR['codigo']}_{mes}_{anio}_cobertura_final.xlsx"
+                out_path = str(Path("output") / out_name)
+                engine.save_output(out_path)
+                
+                log_path = str(Path("logs") / f"{OPERADOR['codigo']}_{mes}_{anio}_log.json")
+                engine.save_log(log_path)
+                
+                st.session_state[f'{OPERADOR_KEY}_output'] = out_path
+                st.session_state[f'{OPERADOR_KEY}_engine'] = engine
+                st.success(f"✅ Consolidado: {len(engine.colegios)} colegios")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error procesando: {e}")
+                st.code(traceback.format_exc())
 
 
-def process_review_only(st, cob_file, mes, anio):
-    import tempfile, os
+def process_review_only(cob_file, mes, anio):
     with st.spinner("Abriendo cobertura..."):
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tc:
-            tc.write(cob_file.getvalue()); cob_path = tc.name
-        try:
-            # Solo cargar para previsualizar
-            from ..core.engine import CoberturaWriter
-            writer = CoberturaWriter(cob_path)
-            preview = writer.get_preview_data()
-            df = pd.DataFrame(preview) if preview else pd.DataFrame()
+        with secure_temp_files(1) as (cob_path,):
+            if not safe_save_uploaded_file(cob_file, cob_path):
+                st.error("Error guardando cobertura")
+                return
             
-            st.session_state[f'{OPERADOR_KEY}_writer'] = writer
-            st.session_state[f'{OPERADOR_KEY}_df'] = df
-            st.session_state[f'{OPERADOR_KEY}_cob_path'] = cob_path
-            st.success("✅ Cobertura cargada para revisión")
-            st.rerun()
-        except Exception as e:
-            st.error(f"Error: {e}")
-        finally:
-            try: os.unlink(cob_path)
-            except: pass
+            try:
+                writer = CoberturaWriter(str(cob_path))
+                preview = writer.get_preview_data()
+                df = pd.DataFrame(preview) if preview else pd.DataFrame()
+                
+                st.session_state[f'{OPERADOR_KEY}_writer'] = writer
+                st.session_state[f'{OPERADOR_KEY}_df'] = df
+                st.session_state[f'{OPERADOR_KEY}_cob_path'] = str(cob_path)
+                st.success("✅ Cobertura cargada para revisión")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error abriendo: {e}")
+                st.code(traceback.format_exc())
 
 
-def show_review_interface(st, mes, anio):
+def show_review_interface(mes, anio):
     """Interfaz de revisión y edición de cobertura"""
     writer = st.session_state[f'{OPERADOR_KEY}_writer']
     df = st.session_state[f'{OPERADOR_KEY}_df']

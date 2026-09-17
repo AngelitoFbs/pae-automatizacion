@@ -1,21 +1,34 @@
-"""Motor base PAE - Lógica compartida de lectura/escritura"""
+"""Motor base PAE - Lógica compartida de lectura/escritura de plantillas Excel.
+
+Este módulo proporciona las clases principales para:
+- Leer plantillas Certificado (multi-hoja)
+- Escribir en plantillas Cobertura preservando fórmulas y formato
+- Gestionar tarifas por grupo y nivel
+- Orquestar el proceso completo Certificado → Cobertura
+"""
 import openpyxl
 import pandas as pd
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Set
 from dataclasses import dataclass, asdict
 from collections import defaultdict
 
-from .config import NIVEL_COLS, DATA_START_ROW, NAME_COL, DANE_COL, TIPOS_RACION, NIVELES
+from .config import (
+    NIVEL_COLS, DATA_START_ROW, NAME_COL, DANE_COL, 
+    TIPOS_RACION, NIVELES
+)
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configurar logging solo una vez
+if not logging.getLogger().handlers:
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class ColegioData:
+    """Datos extraídos de un colegio en la plantilla Certificado."""
     nombre: str
     codigo_dane: str
     departamento: str

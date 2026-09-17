@@ -149,6 +149,7 @@ with st.sidebar:
         card_class = "module-card active" if is_active else "module-card"
         if st.button(name, key=f"nav_{key}", use_container_width=True, 
                      type="primary" if is_active else "secondary"):
+            _cleanup_module_state(st.session_state.active_module, key)
             st.session_state.active_module = key
             st.rerun()
         st.caption(desc)
@@ -182,6 +183,20 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Cleanup session state when switching modules
+def _cleanup_module_state(old_module: str, new_module: str):
+    """Limpia el estado del módulo anterior al cambiar."""
+    prefixes_to_clear = [
+        f'{old_module}_output',
+        f'{old_module}_engine',
+        f'{old_module}_writer',
+        f'{old_module}_df',
+        f'{old_module}_cob_path',
+    ]
+    for key in prefixes_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
 
 # Render active module
 if st.session_state.active_module == 'kelly_primo':
