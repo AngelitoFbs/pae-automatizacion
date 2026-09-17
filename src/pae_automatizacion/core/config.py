@@ -100,18 +100,50 @@ MODALIDAD_A_BLOQUE = {
     ("ALMUERZO", "CCT"): 4,
 }
 
-# Columnas fijas en Certificado
-CERT_CELDAS_FIJAS = {
-    'operador': 'B5',
-    'contrato': 'I5',
-    'institucion': 'B6',
-    'codigo_dane': 'I6',
-    'departamento': 'B7',
-    'municipio': 'B8',
-    'fecha_desde': 'C9',
-    'fecha_hasta': 'I9',
-    'rector': 'B10',
-}
+# ─── Certificado: detección dinámica de celdas fijas ───
+# La plantilla inicial tiene institucion en B6/I6, la completa en B7/I7
+# Buscamos por texto de encabezado para ser robustos
+
+def detectar_celdas_fijas_certificado(ws) -> Dict[str, str]:
+    """Detecta celdas fijas buscando por texto de encabezado."""
+    import re
+    celdas = {}
+    for row in ws.iter_rows(min_row=1, max_row=20, max_col=10, values_only=False):
+        for cell in row:
+            if not cell.value:
+                continue
+            val = str(cell.value).strip().upper()
+            coord = cell.coordinate
+            if 'OPERADOR' in val and 'CONTRATO' not in val:
+                celdas['operador'] = coord
+            elif 'CONTRATO' in val and 'N' in val:
+                celdas['contrato'] = coord
+            elif ('INSTITUCION' in val or 'CENTRO EDUCATIVO' in val) and 'institucion' not in celdas:
+                celdas['institucion'] = coord
+            elif 'CODIGO DANE' in val or 'CÓDIGO DANE' in val:
+                # El valor está en la columna siguiente
+                valor_cell = cell.offset(column=1)
+                celdas['codigo_dane'] = valor_cell.coordinate
+                # Extraer número DANE del valor
+                valor_val = str(valor_cell.value).strip() if valor_cell.value else ""
+                nums = re.findall(r'\d{10,}', valor_val)
+                if nums and 'codigo_dane_valor' not in celdas:
+                    celdas['codigo_dane_valor'] = nums[0]
+            elif 'DEPARTAMENTO' in val:
+                celdas['departamento'] = coord
+            elif 'MUNICIPIO' in val:
+                celdas['municipio'] = coord
+            elif 'DESDE' == val:  # Exact match for "DESDE"
+                celdas['fecha_desde'] = cell.offset(column=1).coordinate
+            elif 'HASTA' == val:  # Exact match for "HASTA"
+                celdas['fecha_hasta'] = cell.offset(column=1).coordinate
+            elif 'FECHA' in val and 'DESDE' in val:
+                celdas['fecha_desde'] = cell.offset(column=1).coordinate
+            elif 'FECHA' in val and 'HASTA' in val:
+                celdas['fecha_hasta'] = cell.offset(column=1).coordinate
+            elif 'RECTOR' in val:
+                celdas['rector'] = coord
+    return celdas
 
 # Columnas de la tabla de raciones en Certificado
 CERT_TABLA_COLS = {

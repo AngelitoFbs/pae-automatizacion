@@ -14,11 +14,12 @@ from collections import defaultdict
 from copy import copy
 
 from .config import (
-    BLOQUES, MODALIDAD_A_BLOQUE, CERT_CELDAS_FIJAS, CERT_TABLA_COLS,
+    BLOQUES, MODALIDAD_A_BLOQUE, CERT_TABLA_COLS,
     NAME_COL, DANE_COL, DATA_START_ROW,
     MAPEO_FILE, TARIFAS_FILE,
     normalizar_modalidad, normalizar_tipo_racion,
     detectar_fila_encabezado_tabla, get_bloque_por_tipo_modalidad,
+    detectar_celdas_fijas_certificado, detectar_fila_total,
 )
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -72,6 +73,11 @@ class CertificadoReader:
         for sheet_name in self.wb.sheetnames:
             ws = self.wb[sheet_name]
             try:
+                # Detectar celdas fijas dinámicamente
+                self.celdas_fijas = detectar_celdas_fijas_certificado(ws)
+                if not self.celdas_fijas.get('codigo_dane'):
+                    logger.warning(f"Hoja '{sheet_name}': no se encontró DANE, omitida")
+                    continue
                 colegio = self._read_sheet(ws, sheet_name)
                 if colegio and colegio.codigo_dane:
                     colegios[colegio.codigo_dane] = colegio
@@ -83,11 +89,19 @@ class CertificadoReader:
         return colegios
 
     def _read_sheet(self, ws, sheet_name: str) -> Optional[ColegioData]:
-        # Leer celdas fijas
+        # Leer celdas fijas detectadas dinámicamente
         datos_fijos = {}
-        for key, cell in CERT_CELDAS_FIJAS.items():
+        for key, cell in self.celdas_fijas.items():
+            if key == 'codigo_dane_valor':
+                continue  # Skip internal key
             val = ws[cell].value
             datos_fijos[key] = str(val).strip() if val else ""
+
+        # Use extracted DANE value if available, otherwise read from cell
+        if 'codigo_dane_valor' in self.celdas_fijas:
+            datos_fijos['codigo_dane'] = self.celdas_fijas['codigo_dane_valor']
+        elif not datos_fijos.get('codigo_dane'):
+            return None
 
         if not datos_fijos.get('codigo_dane'):
             return None
@@ -316,53 +330,167 @@ class PAEEngine:
         self.registros_borrador = []
 
         for dane, colegio in self.colegios.items():
+            # Obtener mapeo del colegio
+            m = self.mapeo.get(dane, {})
+            fila_am_base = m.get('fila_am', 0)
+            fila_pm_base = m.get('fila_pm', 0)
+            nombre_cobertura = m.get('nombre_cobertura', colegio.nombre)
+            bloque_mapa = m.get('bloque', 0)
+
             # Procesar cada tipo de ración
             for tipo_racion, niveles in colegio.raciones.items():
+                # Detectar modalidad para este tipo
                 modalidad = "PS"  # default
-                # Detectar modalidad del tipo (primera aparición)
-                for nivel, data in niveles.items():
-                    if data['raciones_dia'] > 0:
-                        # Buscar modalidad en el texto original (simplificado)
-                        pass
-
-                bloque = get_bloque_por_tipo_modalidad(tipo_racion, "PS")  # Simplificado
+                # Detectar modalidad desde el texto de la hoja (simplificado)
+                # TODO: Mejorar detección de modalidad desde texto original
+                
+                # Determinar bloque destino
+                bloque = get_bloque_por_tipo_modalidad(tipo_racion, "PS")
                 if not bloque:
-                    logger.warning(f"Sin bloque para {tipo_racion}")
+                    logger.warning(f"Sin bloque para {tipo_racion} DANE={dane}")
                     continue
 
-                m = self.mapeo.get(dane, {})
-                fila_am = m.get('fila_am', 0)
-                fila_pm = m.get('fila_pm', 0)
+                bloque_info = BLOQUES[bloque]
+                bloque_nombre = bloque_info['nombre']
 
+                # Obtener filas base del mapeo
+                fila_am_base = self.mapeo.get(dane, {}).get('fila_am', 0)
+                fila_pm_base = self.mapeo.get(dane, {}).get('fila_pm', 0)
+
+                # Procesar cada nivel
                 for nivel in ['A', 'B', 'C', 'D', 'E']:
+                    # Saltar nivel E en bloques 1 y 2
+                    if bloque in [1, 2] and nivel == 'E':
+                        continue
+                    if bloque in [3, 4] and nivel not in ['A', 'B', 'C', 'D', 'E']:
+                        continue
+
                     # Obtener datos de CAJM y CAJT
                     cajm = colegio.raciones.get('CAJM', {}).get(nivel, {})
                     cajt = colegio.raciones.get('CAJT', {}).get(nivel, {})
                     alm = colegio.raciones.get('ALMUERZO', {}).get(nivel, {})
 
-                    # Determinar filas según mapeo
-                    # ... lógica compleja de asignación de filas
+                    # Determinar qué tipo de ración tiene datos para este nivel
+                    tiene_cajm = nivel in colegio.raciones.get('CAJM', {}) and colegio.raciones['CAJM'][nivel].get('raciones_dia', 0) > 0
+                    tiene_cajt = nivel in colegio.raciones.get('CAJT', {}) and colegio.raciones['CAJT'][nivel].get('raciones_dia', 0) > 0
+                    tiene_alm = nivel in colegio.raciones.get('ALMUERZO', {}) and colegio.raciones['ALMUERZO'][nivel].get('raciones_dia', 0) > 0
 
-                    # Por ahora, crear registro base
-                    reg = RegistroBorrador(
-                        dane=dane,
-                        hoja_certificado="",
-                        nombre_certificado="",
-                        nombre_cobertura="",
-                        bloque=0,
-                        bloque_nombre="",
-                        fila_am=0,
-                        fila_pm=0,
-                        tipo_racion="",
-                        modalidad="",
-                        nivel=nivel,
-                        raciones_dia=0,
-                        dias=0,
-                        total_raciones=0,
-                        estado="revisar",
-                        observaciones="Pendiente implementar lógica completa"
-                    )
-                    self.registros_borrador.append(reg)
+                    if not (tiene_cajm or tiene_cajt or tiene_alm):
+                        continue
+
+                    # Determinar filas AM/PM según mapeo
+                    fila_am = 0
+                    fila_pm = 0
+                    es_pm = False
+                    usa_dos_filas = False
+
+                    # Obtener filas del mapeo
+                    fila_am = self.mapeo.get(dane, {}).get('fila_am', 0)
+                    fila_pm = self.mapeo.get(dane, {}).get('fila_pm', 0)
+
+                    # Determinar días atendidos
+                    dias = 0
+                    if tiene_cajm:
+                        dias = cajm.get('dias', 0)
+                    if tiene_cajt:
+                        dias = max(dias, cajt.get('dias', 0))
+                    if tiene_alm:
+                        dias = max(dias, alm.get('dias', 0))
+
+                    # Determinar si usa una o dos filas (regla: si días CAJM != días CAJT)
+                    dias_cajm = cajm.get('dias', 0) if tiene_cajm else 0
+                    dias_cajt = cajt.get('dias', 0) if tiene_cajt else 0
+                    usa_dos_filas = tiene_cajm and tiene_cajt and dias_cajm != dias_cajt
+
+                    if bloque in [1, 2]:  # Bloques con AM/PM
+                        if usa_dos_filas:
+                            # Usar fila_am para CAJM, fila_pm para CAJT
+                            if tiene_cajm:
+                                raciones_dia = cajm.get('raciones_dia', 0)
+                                dias = cajm.get('dias', 0)
+                                self.registros_borrador.append(RegistroBorrador(
+                                    dane=colegio.codigo_dane,
+                                    hoja_certificado="",
+                                    nombre_certificado="",
+                                    nombre_cobertura="",
+                                    bloque=bloque,
+                                    bloque_nombre=BLOQUES[bloque]['nombre'],
+                                    fila_am=fila_am,
+                                    fila_pm=0,
+                                    tipo_racion="CAJM",
+                                    modalidad="PS",
+                                    nivel=nivel,
+                                    raciones_dia=cajm.get('raciones_dia', 0),
+                                    dias=dias,
+                                    total_raciones=cajm.get('total', 0),
+                                    estado="ok",
+                                    observaciones=""
+                                ))
+                            if tiene_cajt:
+                                self.registros_borrador.append(RegistroBorrador(
+                                    dane=colegio.codigo_dane,
+                                    hoja_certificado="",
+                                    nombre_certificado="",
+                                    nombre_cobertura="",
+                                    bloque=bloque,
+                                    bloque_nombre=BLOQUES[bloque]['nombre'],
+                                    fila_am=0,
+                                    fila_pm=fila_pm,
+                                    tipo_racion="CAJT",
+                                    modalidad="PS",
+                                    nivel=nivel,
+                                    raciones_dia=cajt.get('raciones_dia', 0),
+                                    dias=cajt.get('dias', 0),
+                                    total_raciones=cajt.get('total', 0),
+                                    estado="ok",
+                                    observaciones=""
+                                ))
+                        else:
+                            # Una sola fila con AM y PM
+                            if tiene_cajm or tiene_cajt:
+                                raciones_dia_am = cajm.get('raciones_dia', 0) if tiene_cajm else 0
+                                raciones_dia_pm = cajt.get('raciones_dia', 0) if tiene_cajt else 0
+                                dias = max(dias_cajm, dias_cajt) if (dias_cajm := cajm.get('dias', 0) if tiene_cajm else 0) or (dias_cajt := cajt.get('dias', 0) if tiene_cajt else 0) else 0
+                                self.registros_borrador.append(RegistroBorrador(
+                                    dane=colegio.codigo_dane,
+                                    hoja_certificado="",
+                                    nombre_certificado="",
+                                    nombre_cobertura="",
+                                    bloque=bloque,
+                                    bloque_nombre=BLOQUES[bloque]['nombre'],
+                                    fila_am=fila_am,
+                                    fila_pm=fila_pm if not usa_dos_filas else 0,
+                                    tipo_racion="CAJM/CAJT",
+                                    modalidad="PS",
+                                    nivel=nivel,
+                                    raciones_dia=raciones_dia_am + raciones_dia_pm,
+                                    dias=dias,
+                                    total_raciones=(cajm.get('total', 0) if tiene_cajm else 0) + (cajt.get('total', 0) if tiene_cajt else 0),
+                                    estado="ok",
+                                    observaciones=""
+                                ))
+                    else:  # Bloques 3, 4 - solo COBERTURA
+                        if tiene_alm:
+                            raciones_dia = alm.get('raciones_dia', 0)
+                            dias = alm.get('dias', 0)
+                            self.registros_borrador.append(RegistroBorrador(
+                                dane=colegio.codigo_dane,
+                                hoja_certificado="",
+                                nombre_certificado="",
+                                nombre_cobertura="",
+                                bloque=bloque,
+                                bloque_nombre=BLOQUES[bloque]['nombre'],
+                                fila_am=fila_am,
+                                fila_pm=0,
+                                tipo_racion="ALMUERZO",
+                                modalidad="PS",
+                                nivel=nivel,
+                                raciones_dia=raciones_dia,
+                                dias=dias,
+                                total_raciones=alm.get('total', 0),
+                                estado="ok",
+                                observaciones=""
+                            ))
 
         return self.registros_borrador
 
