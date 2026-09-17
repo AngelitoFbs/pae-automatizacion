@@ -15,6 +15,10 @@ OPERADOR = OPERADORES[OPERADOR_KEY]
 
 
 def render_laura_module():
+    # Usar config global del sidebar (app.py)
+    mes = st.session_state.get('global_mes', 'JULIO')
+    anio = st.session_state.get('global_anio', 2026)
+    
     st.markdown(f"""
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
         <div style="width:40px;height:40px;border-radius:10px;background:{OPERADOR['color']};display:flex;align-items:center;justify-content:center;">
@@ -26,18 +30,6 @@ def render_laura_module():
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    with st.sidebar:
-        st.markdown("### ⚙️ Configuración")
-        
-        mes_options = [m[0] for m in MESES_PAE]
-        mes_idx = st.selectbox("Mes", range(len(mes_options)), 
-                               format_func=lambda i: mes_options[i], index=6)
-        mes = mes_options[mes_idx]
-        
-        anio = st.number_input("Año", min_value=2024, max_value=2030, value=2026)
-        
-        st.divider()
 
     cert_name, cob_name = get_template_names(mes)
     
