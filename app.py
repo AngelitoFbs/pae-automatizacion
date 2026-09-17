@@ -21,249 +21,298 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ─── Estilos con paleta FOMBISOL + Animaciones + UX mejorado ───
+# ─── Estilos estilo Finloop - Clean Fintech ───
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --navy: #08244A;
-    --navy-dark: #102B50;
+    --bg: #0A0F1A;
+    --bg-elevated: #111827;
+    --bg-card: #141C2E;
+    --border: #1F2A44;
+    --border-light: #2D3A5A;
+    --text: #F1F5F9;
+    --text-muted: #8899B0;
+    --text-dim: #5E7292;
     --gold: #E7B52A;
-    --gold-light: #F2C94C;
-    --white: #FFFFFF;
-    --green: #2E9B3F;
-    --green-light: #4ade80;
-    --gray-50: #F8FAFC;
-    --gray-100: #F1F5F9;
-    --gray-200: #E2E8F0;
-    --gray-300: #CBD5E1;
-    --gray-400: #94A3B8;
-    --gray-600: #475569;
-    --gray-700: #334155;
+    --gold-hover: #F2C94C;
+    --gold-dim: rgba(231,181,42,0.15);
+    --green: #22C55E;
+    --green-dim: rgba(34,197,94,0.15);
     --red: #EF4444;
-    --red-light: #F87171;
+    --red-dim: rgba(239,68,68,0.15);
+    --blue: #3B82F6;
+    --blue-dim: rgba(59,130,246,0.15);
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    --shadow-sm: 0 2px 12px rgba(0,0,0,0.2);
+    --shadow-hover: 0 8px 32px rgba(0,0,0,0.4);
 }
 
 * {font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;}
 
-.stApp {background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);}
+.stApp {
+    background: var(--bg);
+    color: var(--text);
+}
 
-@keyframes fadeInUp {from {opacity:0;transform:translateY(20px);} to {opacity:1;transform:translateY(0);}}
-@keyframes slideInRight {from {opacity:0;transform:translateX(30px);} to {opacity:1;transform:translateX(0);}}
-@keyframes pulse {0%,100% {box-shadow:0 0 0 0 rgba(231,181,42,0.4);} 50% {box-shadow:0 0 0 12px rgba(231,181,42,0);}}
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+    max-width: 1280px;
+}
+
+header[data-testid="stHeader"] {background: transparent;}
+footer {visibility: hidden;}
+#MainMenu {visibility: hidden;}
+
+/* Scrollbar */
+::-webkit-scrollbar {width: 8px;height: 8px;}
+::-webkit-scrollbar-track {background: var(--bg);}
+::-webkit-scrollbar-thumb {background: var(--border);border-radius: 4px;}
+::-webkit-scrollbar-thumb:hover {background: var(--border-light);}
+
+/* Animations */
+@keyframes fadeInUp {from {opacity:0;transform:translateY(16px);} to {opacity:1;transform:translateY(0);}}
+@keyframes fadeIn {from {opacity:0;} to {opacity:1;}}
+@keyframes slideUp {from {opacity:0;transform:translateY(24px);} to {opacity:1;transform:translateY(0);}}
+@keyframes pulse {0%,100% {box-shadow:0 0 0 0 var(--gold-dim);} 50% {box-shadow:0 0 0 16px transparent;}}
 @keyframes shimmer {0% {background-position:-200% 0;} 100% {background-position:200% 0;}}
-@keyframes spin {from {transform:rotate(0deg);} to {transform:rotate(360deg);}}
-@keyframes bounce {0%,100% {transform:translateY(0);} 50% {transform:translateY(-4px);}}
+@keyframes spin {to {transform:rotate(360deg);}}
 
-.animate-in {animation:fadeInUp 0.5s ease-out forwards;}
+.animate-in {animation:slideUp 0.6s ease-out forwards;opacity:0;}
 .animate-delay-1 {animation-delay:0.05s;}
 .animate-delay-2 {animation-delay:0.1s;}
 .animate-delay-3 {animation-delay:0.15s;}
 .animate-delay-4 {animation-delay:0.2s;}
+.animate-delay-5 {animation-delay:0.25s;}
 
-.step-badge {
-    display:inline-flex;align-items:center;gap:8px;
-    padding:10px 18px;border-radius:999px;font-weight:600;font-size:0.85rem;
-    transition:all 0.3s ease;
-    white-space: nowrap;
+/* Stepper */
+.stepper-container {
+    display:flex;align-items:center;gap:12px;margin-bottom:2.5rem;padding:0 4px;
 }
-.step-badge::before {
-    content: attr(data-step);
-    width:22px;height:22px;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    font-size:0.7rem;font-weight:700;
-    background:currentColor;color:var(--white);
+.stepper-line {
+    flex:1;height:2px;background:var(--border);border-radius:1px;position:relative;overflow:hidden;
 }
-.step-done {background:linear-gradient(135deg,var(--green) 0%,var(--green-light) 100%);color:#fff;box-shadow:0 4px 14px rgba(46,155,63,0.3);}
-.step-done::before {background:var(--white);color:var(--green);}
-.step-active {background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);color:#fff;animation:pulse 2s infinite;box-shadow:0 4px 20px rgba(8,36,74,0.3);}
-.step-pending {background:var(--gray-100);color:var(--gray-500);}
-
-.step-progress {
-    height:4px;background:var(--gray-200);border-radius:2px;margin:0.5rem 0 1rem;
-    overflow:hidden;position:relative;
-}
-.step-progress::after {
+.stepper-line::after {
     content:'';position:absolute;top:0;left:0;height:100%;
-    background:linear-gradient(90deg,var(--gold) 0%,var(--gold-light) 100%);
-    border-radius:2px;transition:width 0.5s ease;
+    background:linear-gradient(90deg,var(--gold),var(--gold-hover));
+    border-radius:1px;transition:width 0.6s ease;
 }
-
-.card {
-    background:var(--white);
-    border:1px solid var(--gray-200);
-    border-radius:16px;
-    padding:1.5rem;
-    margin-bottom:1rem;
-    box-shadow:0 2px 8px rgba(8,36,74,0.04);
+.stepper-step {
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    opacity:0.4;transition:all 0.3s ease;
+}
+.stepper-step.active {opacity:1;}
+.stepper-step.done {opacity:1;}
+.stepper-circle {
+    width:40px;height:40px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:0.85rem;
+    background:var(--bg-card);border:2px solid var(--border);
     transition:all 0.3s ease;
 }
-.card:hover {border-color:var(--gold-light);box-shadow:0 8px 24px rgba(8,36,74,0.08);transform:translateY(-2px);}
-.card-gold {border:2px solid var(--gold);background:linear-gradient(135deg,#fffdf5 0%,#ffffff 100%);}
-.card-glass {background:rgba(255,255,255,0.9);backdrop-filter:blur(8px);border:1px solid rgba(231,181,42,0.2);}
+.stepper-step.done .stepper-circle {
+    background:linear-gradient(135deg,var(--green),#16a34a);
+    border-color:var(--green);color:#fff;
+}
+.stepper-step.active .stepper-circle {
+    background:var(--navy);border-color:var(--gold);color:var(--gold);
+    animation:pulse 2s infinite;
+}
+.stepper-step.pending .stepper-circle {color:var(--text-dim);}
+.stepper-label {font-size:0.7rem;font-weight:500;color:var(--text-dim);text-align:center;white-space:nowrap;min-width:80px;}
+.stepper-step.done .stepper-label {color:var(--green);}
+.stepper-step.active .stepper-label {color:var(--gold);font-weight:600;}
 
-.metric-big {font-size:2.5rem;font-weight:700;color:var(--navy);background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dark) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+/* Cards */
+.card {
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:1.5rem;
+    transition:all 0.3s ease;
+}
+.card:hover {
+    border-color:var(--border-light);
+    box-shadow:var(--shadow-hover);
+    transform:translateY(-2px);
+}
+.card-gold {border-color:var(--gold);background:linear-gradient(135deg,rgba(231,181,42,0.05),var(--bg-card));}
+.card-glass {background:rgba(20,28,46,0.9);backdrop-filter:blur(12px);border:1px solid var(--border-light);}
 
+/* Buttons */
 .stButton>button {
-    border-radius:10px !important;
+    border-radius:var(--radius) !important;
     font-weight:600 !important;
+    font-size:0.9rem !important;
+    padding:0.75rem 1.5rem !important;
     transition:all 0.2s ease !important;
     border:none !important;
-    position:relative;overflow:hidden;
+    letter-spacing:0.01em;
 }
 .stButton>button[kind="primary"] {
-    background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%) !important;
-    color:var(--navy) !important;
-    box-shadow:0 4px 16px rgba(231,181,42,0.3) !important;
+    background:linear-gradient(135deg,var(--gold),var(--gold-hover)) !important;
+    color:#0A0F1A !important;
+    box-shadow:0 4px 20px var(--gold-dim) !important;
 }
 .stButton>button[kind="primary"]:hover {
     transform:translateY(-2px);
-    box-shadow:0 8px 24px rgba(231,181,42,0.4) !important;
+    box-shadow:0 8px 32px var(--gold-dim) !important;
 }
 .stButton>button[kind="primary"]:active {transform:translateY(0);}
 .stButton>button[kind="secondary"] {
-    background:var(--white) !important;
-    color:var(--navy) !important;
-    border:2px solid var(--gray-200) !important;
+    background:var(--bg-elevated) !important;
+    color:var(--text) !important;
+    border:1px solid var(--border) !important;
 }
 .stButton>button[kind="secondary"]:hover {
     border-color:var(--gold) !important;
-    background:linear-gradient(135deg,#fffdf5 0%,#ffffff 100%) !important;
+    background:var(--bg-card) !important;
 }
-.stButton>button:disabled {opacity:0.5;cursor:not-allowed;}
+.stButton>button:disabled {opacity:0.4;cursor:not-allowed;}
 
-.warning-box {
-    background:linear-gradient(135deg,#fff8ed 0%,#fffdf5 100%);
-    border-left:4px solid var(--gold);
-    padding:1rem 1.25rem;
-    border-radius:12px;
-    margin:1rem 0;
-}
-.success-box {
-    background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);
-    border-left:4px solid var(--green);
-    padding:1rem 1.25rem;
-    border-radius:12px;
-    margin:1rem 0;
-}
-.error-box {
-    background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);
-    border-left:4px solid var(--red);
-    padding:1rem 1.25rem;
-    border-radius:12px;
-    margin:1rem 0;
-}
-.info-box {
-    background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);
-    border-left:4px solid var(--navy);
-    padding:1rem 1.25rem;
-    border-radius:12px;
-    margin:1rem 0;
-}
-
+/* File Uploader */
 [data-testid="stFileUploader"] {
-    border:2px dashed var(--gray-300) !important;
-    border-radius:16px !important;
-    padding:2rem !important;
-    background:var(--white) !important;
+    border:2px dashed var(--border) !important;
+    border-radius:var(--radius-lg) !important;
+    padding:2.5rem 2rem !important;
+    background:var(--bg-card) !important;
     transition:all 0.3s ease !important;
 }
 [data-testid="stFileUploader"]:hover {
     border-color:var(--gold) !important;
-    background:linear-gradient(135deg,#fffdf5 0%,#ffffff 100%) !important;
+    background:var(--gold-dim) !important;
 }
 [data-testid="stFileUploader"]:focus-within {
     border-color:var(--gold) !important;
-    box-shadow:0 0 0 4px rgba(231,181,42,0.15) !important;
+    box-shadow:0 0 0 4px var(--gold-dim) !important;
 }
 [data-testid="stFileUploader"] section {padding:0 !important;}
-[data-testid="stFileUploader"] small {color:var(--gray-600) !important;}
+[data-testid="stFileUploader"] small {color:var(--text-dim) !important;}
 
+/* DataFrame */
 [data-testid="stDataFrame"] {
-    border-radius:12px !important;
+    border-radius:var(--radius) !important;
     overflow:hidden !important;
-    border:1px solid var(--gray-200) !important;
+    border:1px solid var(--border) !important;
+    background:var(--bg-card) !important;
 }
 
+/* Metrics */
 .stMetric {
-    background:var(--white);
-    border:1px solid var(--gray-200);
-    border-radius:12px;
-    padding:1rem 1.25rem;
-    box-shadow:0 2px 8px rgba(8,36,74,0.04);
+    background:var(--bg-card) !important;
+    border:1px solid var(--border) !important;
+    border-radius:var(--radius) !important;
+    padding:1.25rem !important;
+    box-shadow:var(--shadow-sm) !important;
 }
-.stMetric:hover {border-color:var(--gold-light);}
+.stMetric:hover {border-color:var(--border-light) !important;}
+[data-testid="stMetricLabel"] {color:var(--text-muted) !important;font-size:0.75rem !important;font-weight:500 !important;}
+[data-testid="stMetricValue"] {color:var(--text) !important;font-weight:700 !important;}
 
+/* Expander */
 .stExpander {
-    border:1px solid var(--gray-200) !important;
-    border-radius:12px !important;
-    background:var(--white) !important;
+    border:1px solid var(--border) !important;
+    border-radius:var(--radius) !important;
+    background:var(--bg-card) !important;
 }
-.stExpander summary {font-weight:600;color:var(--navy);}
+.stExpander summary {font-weight:600;color:var(--text) !important;font-size:0.9rem !important;}
+.stExpander details {border:none !important;}
 
-header[data-testid="stHeader"] {background:transparent;}
-footer {visibility:hidden;}
-
-.block-container {padding-top:1.5rem;padding-bottom:2rem;max-width:1200px;}
-
-.shimmer-bg {
-    background:linear-gradient(90deg,var(--gray-100) 25%,var(--gray-50) 50%,var(--gray-100) 75%);
-    background-size:200% 100%;
-    animation:shimmer 1.5s infinite;
+/* Inputs */
+.stTextInput>div>div>input,
+.stSelectbox>div>div,
+.stNumberInput>div>div>input {
+    background:var(--bg-elevated) !important;
+    border:1px solid var(--border) !important;
+    border-radius:var(--radius) !important;
+    color:var(--text) !important;
+}
+.stTextInput>div>div>input:focus,
+.stSelectbox>div>div:focus-within,
+.stNumberInput>div>div>input:focus {
+    border-color:var(--gold) !important;
+    box-shadow:0 0 0 3px var(--gold-dim) !important;
 }
 
-.tooltip {
-    position:relative;cursor:help;
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {
+    gap:4px;background:var(--bg-elevated);padding:4px;
+    border-radius:var(--radius);border:1px solid var(--border);
 }
+.stTabs [data-baseweb="tab"] {
+    background:transparent !important;color:var(--text-muted) !important;
+    font-weight:500 !important;padding:0.75rem 1.25rem !important;
+    border-radius:var(--radius-sm) !important;transition:all 0.2s ease !important;
+}
+.stTabs [aria-selected="true"] {
+    background:var(--bg-card) !important;color:var(--gold) !important;
+    box-shadow:var(--shadow-sm) !important;
+}
+
+/* Progress */
+.stProgress>div>div>div {
+    background:linear-gradient(90deg,var(--gold),var(--gold-hover)) !important;
+    border-radius:2px !important;
+}
+
+/* Selectbox */
+[data-testid="stSelectbox"] [data-baseweb="select"] {
+    background:var(--bg-elevated) !important;border:1px solid var(--border) !important;
+}
+
+/* Empty State */
+.empty-state {
+    text-align:center;padding:3rem 2rem;color:var(--text-dim);
+}
+.empty-state svg {width:72px;height:72px;margin-bottom:1rem;opacity:0.4;}
+.empty-state h3 {margin:0 0 0.5rem;color:var(--text);font-size:1.1rem;font-weight:600;}
+.empty-state p {margin:0;color:var(--text-dim);font-size:0.9rem;}
+
+/* KBD */
+kbd {
+    background:var(--bg-elevated);border:1px solid var(--border);
+    border-radius:6px;padding:2px 8px;font-family:monospace;
+    font-size:0.75rem;color:var(--text-muted);
+}
+
+/* Tooltip */
+.tooltip {position:relative;cursor:help;display:inline-block;}
 .tooltip:hover::after {
-    content:attr(data-tip);
-    position:absolute;bottom:125%;left:50%;transform:translateX(-50%);
-    background:var(--navy);color:var(--white);
-    padding:6px 10px;border-radius:6px;font-size:0.75rem;
-    white-space:nowrap;z-index:100;
-    box-shadow:0 4px 12px rgba(0,0,0,0.15);
-    animation:fadeInUp 0.2s ease;
+    content:attr(data-tip);position:absolute;bottom:130%;left:50%;transform:translateX(-50%);
+    background:var(--bg-elevated);color:var(--text);padding:8px 12px;
+    border-radius:var(--radius-sm);font-size:0.75rem;white-space:nowrap;z-index:100;
+    border:1px solid var(--border);box-shadow:var(--shadow);animation:fadeInUp 0.15s ease;
 }
 .tooltip:hover::before {
-    content:'';position:absolute;bottom:115%;left:50%;transform:translateX(-50%);
-    border:6px solid transparent;border-top-color:var(--navy);
+    content:'';position:absolute;bottom:120%;left:50%;transform:translateX(-50%);
+    border:6px solid transparent;border-top-color:var(--bg-elevated);
 }
 
-.loading-overlay {
-    position:fixed;top:0;left:0;right:0;bottom:0;
-    background:rgba(255,255,255,0.95);z-index:9999;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:1rem;
-}
-.loading-spinner {
-    width:48px;height:48px;border:4px solid var(--gray-200);
-    border-top-color:var(--gold);border-radius:50%;
-    animation:spin 1s linear infinite;
-}
-.loading-dots {display:flex;gap:6px;}
+/* Loading */
+.loading-dots {display:flex;gap:6px;justify-content:center;padding:2rem;}
 .loading-dots span {
-    width:10px;height:10px;border-radius:50%;background:var(--gold);
+    width:8px;height:8px;border-radius:50%;background:var(--gold);
     animation:bounce 1.4s ease-in-out infinite both;
 }
-.loading-dots span:nth-child(2){animation-delay:0.2s;}
-.loading-dots span:nth-child(3){animation-delay:0.4s;}
+.loading-dots span:nth-child(2){animation-delay:0.15s;}
+.loading-dots span:nth-child(3){animation-delay:0.3s;}
+@keyframes bounce {0%,100% {transform:translateY(0);opacity:0.5;} 50% {transform:translateY(-8px);opacity:1;}}
 
-.empty-state {
-    text-align:center;padding:3rem 2rem;color:var(--gray-500);
-}
-.empty-state svg {width:80px;height:80px;margin-bottom:1rem;opacity:0.5;}
-.empty-state h3 {margin:0 0 0.5rem;color:var(--navy);font-size:1.25rem;}
-.empty-state p {margin:0;color:var(--gray-600);}
-
+/* Responsive */
 @media (max-width: 768px) {
     .block-container {padding:1rem;}
-    .step-badge {padding:8px 12px;font-size:0.75rem;}
-    .step-badge::before {width:18px;height:18px;font-size:0.65rem;}
-    .card {padding:1rem;border-radius:12px;}
-    .stButton>button {padding:0.6rem 1rem;font-size:0.9rem;}
-    [data-testid="stFileUploader"] {padding:1.5rem !important;}
-    .stMetric {padding:0.75rem 1rem;}
+    .stepper-label {font-size:0.65rem;min-width:70px;}
+    .stepper-circle {width:32px;height:32px;font-size:0.75rem;}
+    .card {padding:1.25rem;border-radius:var(--radius);}
+    .stButton>button {padding:0.6rem 1rem !important;font-size:0.85rem !important;}
+    [data-testid="stFileUploader"] {padding:2rem 1.5rem !important;}
+    .stMetric {padding:1rem !important;}
+    .block-container {padding-top:1.5rem;}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -310,79 +359,50 @@ def load_default_configs():
 
 load_default_configs()
 
-# ─── Progress bar helper ───
-progress_pct = {1: 0, 2: 33, 3: 66, 4: 100}.get(st.session_state.step, 0)
-
-# ─── Header con logo y animación ───
-st.markdown(f"""
-<div class="animate-in" style="text-align:center;padding:1rem 0 0.5rem;">
-    <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:8px;">
-        <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(231,181,42,0.3);">
-            <span style="font-size:24px;color:var(--navy);">🍎</span>
+# ─── Header Finloop Style ───
+st.markdown("""
+<div class="animate-in" style="padding:0.5rem 0 1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold-hover));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px var(--gold-dim);">
+                <span style="font-size:20px;">🍎</span>
+            </div>
+            <div>
+                <h1 style="margin:0;font-size:1.5rem;font-weight:700;color:var(--text);letter-spacing:-0.02em;">PAE Automatización</h1>
+                <p style="margin:2px 0 0 0;font-size:0.85rem;color:var(--text-muted);">Certificado → Cobertura</p>
+            </div>
         </div>
-        <div style="text-align:left;">
-            <h1 style="margin:0;font-size:1.75rem;font-weight:700;color:var(--navy);letter-spacing:-0.5px;">PAE Automatización</h1>
-            <p style="margin:2px 0 0 0;font-size:0.9rem;color:var(--gray-600);">Certificado → Cobertura</p>
+        <div style="text-align:right;">
+            <p style="margin:0;font-size:0.75rem;color:var(--text-dim);">UT Alianza Integral</p>
+            <p style="margin:2px 0 0 0;font-size:0.7rem;color:var(--gold);font-weight:600;">Programa Alimentación Escolar</p>
         </div>
     </div>
-    <p style="margin:8px 0 0 0;font-size:0.85rem;color:var(--gray-600);">UT Alianza Integral • Programa de Alimentación Escolar</p>
 </div>
 """, unsafe_allow_html=True)
 
-# ─── Stepper visual con progress bar ───
-st.markdown(f'''
-<div class="animate-in animate-delay-1" style="margin-top:0.5rem;">
-    <div class="step-progress" style="--progress:{progress_pct}%;">
-        <div style="width:{progress_pct}%;"></div>
+# ─── Stepper Finloop Style ───
+step = st.session_state.step
+st.markdown(f"""
+<div class="animate-in animate-delay-1 stepper-container">
+    <div class="stepper-line" style="--progress:{ {1:0, 2:33, 3:66, 4:100}.get(step, 0) }%;"><div style="width:{ {1:0, 2:33, 3:66, 4:100}.get(step, 0) }%;"></div></div>
+    <div class="stepper-step {'done' if step > 1 else ('active' if step == 1 else 'pending')}">
+        <div class="stepper-circle">{'✓' if step > 1 else '1'}</div>
+        <span class="stepper-label">1. Subir archivos</span>
     </div>
-    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-        <span class="step-badge step-done" data-step="1">Subir archivos</span>
-        <span class="step-badge step-done" data-step="2">Revisar datos</span>
-        <span class="step-badge step-done" data-step="3">Tarifas</span>
-        <span class="step-badge step-done" data-step="4">Descargar</span>
+    <div class="stepper-step {'done' if step > 2 else ('active' if step == 2 else 'pending')}">
+        <div class="stepper-circle">{'✓' if step > 2 else '2'}</div>
+        <span class="stepper-label">2. Revisar datos</span>
+    </div>
+    <div class="stepper-step {'done' if step > 3 else ('active' if step == 3 else 'pending')}">
+        <div class="stepper-circle">{'✓' if step > 3 else '3'}</div>
+        <span class="stepper-label">3. Tarifas</span>
+    </div>
+    <div class="stepper-step {'done' if step > 4 else ('active' if step == 4 else 'pending')}">
+        <div class="stepper-circle">{'✓' if step > 4 else '4'}</div>
+        <span class="stepper-label">4. Descargar</span>
     </div>
 </div>
-''', unsafe_allow_html=True)
-
-# Actualizar clases según step actual
-if st.session_state.step == 1:
-    stepper_html = '''
-    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-        <span class="step-badge step-active" data-step="1">Subir archivos</span>
-        <span class="step-badge step-pending" data-step="2">Revisar datos</span>
-        <span class="step-badge step-pending" data-step="3">Tarifas</span>
-        <span class="step-badge step-pending" data-step="4">Descargar</span>
-    </div>
-    '''
-elif st.session_state.step == 2:
-    stepper_html = '''
-    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-        <span class="step-badge step-done" data-step="1">Subir archivos</span>
-        <span class="step-badge step-active" data-step="2">Revisar datos</span>
-        <span class="step-badge step-pending" data-step="3">Tarifas</span>
-        <span class="step-badge step-pending" data-step="4">Descargar</span>
-    </div>
-    '''
-elif st.session_state.step == 3:
-    stepper_html = '''
-    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-        <span class="step-badge step-done" data-step="1">Subir archivos</span>
-        <span class="step-badge step-done" data-step="2">Revisar datos</span>
-        <span class="step-badge step-active" data-step="3">Tarifas</span>
-        <span class="step-badge step-pending" data-step="4">Descargar</span>
-    </div>
-    '''
-else:
-    stepper_html = '''
-    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-        <span class="step-badge step-done" data-step="1">Subir archivos</span>
-        <span class="step-badge step-done" data-step="2">Revisar datos</span>
-        <span class="step-badge step-done" data-step="3">Tarifas</span>
-        <span class="step-badge step-active" data-step="4">Descargar</span>
-    </div>
-    '''
-
-st.markdown(f'<div class="animate-in animate-delay-1" style="margin-top:1rem;">{stepper_html}</div>', unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 st.divider()
 
@@ -390,65 +410,74 @@ st.divider()
 # PASO 1: SUBIR ARCHIVOS
 # ═══════════════════════════════════════════
 if st.session_state.step == 1:
-    st.markdown('<div class="animate-in animate-delay-2">', unsafe_allow_html=True)
-    st.markdown("### 📁 Paso 1: Subir los dos archivos Excel")
-    st.caption("Arrastra o selecciona los archivos • Se procesarán automáticamente")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="animate-in" style="margin-bottom:1.5rem;">
+        <h2 style="margin:0 0 0.25rem;font-size:1.25rem;font-weight:700;color:var(--text);">Subir archivos</h2>
+        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Arrastra o selecciona los dos archivos Excel requeridos</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
+    
     with col1:
-        st.markdown('<div class="card card-gold animate-in animate-delay-2">', unsafe_allow_html=True)
-        st.markdown("**📄 Plantilla Certificado** <span class='tooltip' data-tip='Archivo con una hoja por colegio, firmado por el rector'></span>", unsafe_allow_html=True)
-        st.caption("Una hoja por colegio • Meses: Julio, Agosto, etc.")
-        cert_file = st.file_uploader(
-            "Certificado",
-            type=['xlsx'],
-            label_visibility="collapsed",
-            help="Ej: 2_CERTIFICACIONES_MES_DE_JULIO.xlsx"
-        )
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("**📄 Certificado**")
+        st.caption("Hoja por colegio • Firmado por rector")
+        cert_file = st.file_uploader("Certificado", type=['xlsx'], label_visibility="collapsed", help="2_CERTIFICACIONES_MES_DE_JULIO.xlsx")
         if cert_file:
-            st.markdown(f'<div class="success-box">✅ {cert_file.name} <span style="color:var(--gray-600);">({cert_file.size/1024:.0f} KB)</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="padding:0.75rem;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius);margin-top:0.5rem;display:flex;align-items:center;gap:0.75rem;"><span style="font-size:1.25rem;">✓</span><div><strong style="color:var(--green);">{cert_file.name}</strong><br><small style="color:var(--text-muted);">{cert_file.size/1024:.0f} KB</small></div></div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><h3>Sin archivo</h3><p>Sube el Certificado (.xlsx)</p></div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="empty-state" style="padding:2rem 1rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.4;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <h3 style="font-size:0.95rem;">Sin archivo</h3>
+                <p style="font-size:0.8rem;">Sube el Certificado (.xlsx)</p>
+            </div>
+            """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        st.markdown('<div class="card card-gold animate-in animate-delay-3">', unsafe_allow_html=True)
-        st.markdown("**📋 Plantilla Cobertura** <span class='tooltip' data-tip='Plantilla base con fórmulas y formato predefinido (hoja JULIO)'></span>", unsafe_allow_html=True)
-        st.caption("Hoja 'JULIO' con fórmulas y formato listo")
-        cob_file = st.file_uploader(
-            "Cobertura",
-            type=['xlsx'],
-            label_visibility="collapsed",
-            help="Ej: 3_COBERTURA_EJECUTADA_JULIO_2026.xlsx"
-        )
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.markdown("**📋 Cobertura**")
+        st.caption("Hoja JULIO • Fórmulas y formato listos")
+        cob_file = st.file_uploader("Cobertura", type=['xlsx'], label_visibility="collapsed", help="3_COBERTURA_EJECUTADA_JULIO_2026.xlsx")
         if cob_file:
-            st.markdown(f'<div class="success-box">✅ {cob_file.name} <span style="color:var(--gray-600);">({cob_file.size/1024:.0f} KB)</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="padding:0.75rem;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius);margin-top:0.5rem;display:flex;align-items:center;gap:0.75rem;"><span style="font-size:1.25rem;">✓</span><div><strong style="color:var(--green);">{cob_file.name}</strong><br><small style="color:var(--text-muted);">{cob_file.size/1024:.0f} KB</small></div></div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><h3>Sin archivo</h3><p>Sube la Cobertura (.xlsx)</p></div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="empty-state" style="padding:2rem 1rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.4;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <h3 style="font-size:0.95rem;">Sin archivo</h3>
+                <p style="font-size:0.8rem;">Sube la Cobertura (.xlsx)</p>
+            </div>
+            """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.divider()
     
-    # Configuración opcional en expander
-    with st.expander("⚙️ Configuración avanzada (opcional)"):
+    # Configuración opcional
+    with st.expander("⚙️ Configuración avanzada"):
         c1, c2 = st.columns(2)
         with c1:
             tarifas_file = st.file_uploader("tarifas.csv", type=['csv'], help="Grupos de tarifa por nivel A-D")
             if tarifas_file:
                 st.session_state.tarifas_df = pd.read_csv(tarifas_file)
-                st.markdown('<div class="success-box">✅ Tarifas personalizadas cargadas</div>', unsafe_allow_html=True)
+                st.markdown('<div style="padding:0.5rem;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius);color:var(--green);font-size:0.85rem;">✓ Tarifas personalizadas cargadas</div>', unsafe_allow_html=True)
         with c2:
             map_file = st.file_uploader("colegios_tarifas.csv", type=['csv'], help="DANE → grupo_tarifa")
             if map_file:
                 st.session_state.colegios_tarifas_df = pd.read_csv(map_file, comment='#')
-                st.markdown('<div class="success-box">✅ Mapeo colegio-tarifa cargado</div>', unsafe_allow_html=True)
+                st.markdown('<div style="padding:0.5rem;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius);color:var(--green);font-size:0.85rem;">✓ Mapeo colegio-tarifa cargado</div>', unsafe_allow_html=True)
     
-    # Keyboard shortcuts hint
+    # Keyboard hint
     st.markdown("""
-    <div style="text-align:center;padding:1rem;color:var(--gray-500);font-size:0.8rem;">
-        <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">Enter</kbd> Procesar&nbsp;&nbsp;
-        <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">←</kbd> / <kbd style="background:var(--gray-100);border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-family:monospace;">→</kbd> Navegar pasos
+    <div style="text-align:center;padding:1rem;color:var(--text-dim);font-size:0.75rem;">
+        <kbd style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:monospace;font-size:0.7rem;">Enter</kbd> Procesar&nbsp;&nbsp;
+        <kbd style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:monospace;font-size:0.7rem;">←</kbd> / <kbd style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:monospace;font-size:0.7rem;">→</kbd> Navegar
     </div>
     """, unsafe_allow_html=True)
     
@@ -499,14 +528,25 @@ if st.session_state.step == 1:
 # PASO 2: REVISAR Y EDITAR
 # ═══════════════════════════════════════════
 elif st.session_state.step == 2:
-    st.markdown('<div class="animate-in animate-delay-2">', unsafe_allow_html=True)
-    st.markdown("### 📋 Paso 2: Revisar y corregir datos")
-    st.caption("Edita directamente en la tabla • Celdas vacías = 0 • Los totales se recalculan solos en Excel")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="animate-in" style="margin-bottom:1.5rem;">
+        <h2 style="margin:0 0 0.25rem;font-size:1.25rem;font-weight:700;color:var(--text);">Revisar y editar</h2>
+        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Verifica los datos mapeados • Edita directamente en la tabla</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     if st.session_state.cobertura_df is None or st.session_state.cobertura_df.empty:
-        st.warning("No hay datos. Vuelve al Paso 1.")
-        if st.button("← Volver"): st.session_state.step = 1; st.rerun()
+        st.markdown("""
+        <div class="card" style="text-align:center;padding:3rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:48px;height:48px;margin:0 auto 1rem;opacity:0.4;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 style="margin:0 0 0.5rem;font-size:1.1rem;">Sin datos para revisar</h3>
+            <p style="margin:0;color:var(--text-muted);">Vuelve al paso 1 y sube los archivos</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("← Volver al paso 1", use_container_width=True):
+            st.session_state.step = 1; st.rerun()
     else:
         df = st.session_state.cobertura_df.copy()
         
@@ -520,15 +560,12 @@ elif st.session_state.step == 2:
         
         # Renombrar columnas a nombres amigables (solo las que existan)
         rename_map = {
-            'fila': 'Fila',
-            'dane': 'DANE',
-            'nombre': 'Colegio',
+            'fila': 'Fila', 'dane': 'DANE', 'nombre': 'Colegio',
         }
         for n in ['A','B','C','D']:
             rename_map[f'nivel_{n.lower()}_am'] = f'{n} - AM'
             rename_map[f'nivel_{n.lower()}_pm'] = f'{n} - PM'
             rename_map[f'nivel_{n.lower()}_dias'] = f'{n} - Días'
-        # Solo renombrar columnas que existan
         existing_rename = {k: v for k, v in rename_map.items() if k in df_show.columns}
         df_show = df_show.rename(columns=existing_rename)
         
@@ -539,12 +576,11 @@ elif st.session_state.step == 2:
         show_cols = [c for c in show_cols if c in df_show.columns]
         
         # Editor
-        st.markdown('<div class="card animate-in animate-delay-2">', unsafe_allow_html=True)
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.caption("Edita directamente • Celdas vacías = 0 • Totales se recalculan en Excel")
         edited = st.data_editor(
             df_show[show_cols],
-            use_container_width=True,
-            hide_index=True,
-            num_rows="dynamic",
+            use_container_width=True, hide_index=True, num_rows="dynamic",
             column_config={
                 "Fila": st.column_config.NumberColumn("Fila", disabled=True, width="small"),
                 "DANE": st.column_config.TextColumn("DANE", disabled=True, width="medium"),
@@ -552,8 +588,7 @@ elif st.session_state.step == 2:
                 **{f'{n} - AM': st.column_config.NumberColumn(f'{n} AM', min_value=0, step=1, width="small") for n in ['A','B','C','D'] if f'{n} - AM' in show_cols},
                 **{f'{n} - PM': st.column_config.NumberColumn(f'{n} PM', min_value=0, step=1, width="small") for n in ['A','B','C','D'] if f'{n} - PM' in show_cols},
                 **{f'{n} - Días': st.column_config.NumberColumn(f'{n} Días', min_value=0, max_value=31, step=1, width="small") for n in ['A','B','C','D'] if f'{n} - Días' in show_cols},
-            },
-            key="data_editor"
+            }, key="data_editor"
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -562,15 +597,15 @@ elif st.session_state.step == 2:
             st.session_state.edited = True
             st.session_state.cobertura_df = edited
         
+        # Botones
         col1, col2, col3 = st.columns([1,1,1])
         with col1:
             if st.button("← Volver", use_container_width=True):
                 st.session_state.step = 1; st.rerun()
         with col2:
-            if st.button("💾 Guardar cambios", type="secondary", use_container_width=True, disabled=not st.session_state.edited):
+            if st.button("💾 Guardar", type="secondary", use_container_width=True, disabled=not st.session_state.edited):
                 wb = openpyxl.load_workbook(st.session_state.output_file)
                 ws = wb.active
-                # Mapear de vuelta a columnas Excel
                 for _, row in edited.iterrows():
                     fila = int(row['Fila'])
                     for n in ['A','B','C','D']:
@@ -582,7 +617,7 @@ elif st.session_state.step == 2:
                                 ws.cell(row=fila, column=col_idx, value=int(val))
                 wb.save(st.session_state.output_file)
                 st.session_state.edited = False
-                st.markdown('<div class="success-box">✅ Cambios guardados</div>', unsafe_allow_html=True)
+                st.toast("✅ Cambios guardados", icon="✅")
         with col3:
             if st.button("Continuar →", type="primary", use_container_width=True):
                 st.session_state.step = 3; st.rerun()
@@ -590,13 +625,10 @@ elif st.session_state.step == 2:
         # Resumen rápido
         st.divider()
         c1, c2, c3 = st.columns(3)
-        c1.metric("Filas con datos", len(df_show))
-        
+        c1.metric("Filas", len(df_show))
         def safe_sum(df, col):
-            if col in df.columns:
-                return int(pd.to_numeric(df[col], errors='coerce').fillna(0).sum())
+            if col in df.columns: return int(pd.to_numeric(df[col], errors='coerce').fillna(0).sum())
             return 0
-        
         total_am = sum(safe_sum(df_show, f'{n} - AM') for n in ['A','B','C','D'])
         total_pm = sum(safe_sum(df_show, f'{n} - PM') for n in ['A','B','C','D'])
         c2.metric("Total AM", f"{total_am:,}")
@@ -606,14 +638,25 @@ elif st.session_state.step == 2:
 # PASO 3: TARIFAS
 # ═══════════════════════════════════════════
 elif st.session_state.step == 3:
-    st.markdown('<div class="animate-in animate-delay-2">', unsafe_allow_html=True)
-    st.markdown("### 💰 Paso 3: Asignar grupo de tarifa por colegio")
-    st.caption("Cada grupo tiene precios distintos. Ver tabla de referencia abajo.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="animate-in" style="margin-bottom:1.5rem;">
+        <h2 style="margin:0 0 0.25rem;font-size:1.25rem;font-weight:700;color:var(--text);">Asignar tarifas</h2>
+        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Define el grupo de tarifa por colegio • Ver tabla de precios abajo</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     if not st.session_state.colegios_data:
-        st.warning("Sin datos. Vuelve al Paso 1.")
-        if st.button("← Volver"): st.session_state.step = 1; st.rerun()
+        st.markdown("""
+        <div class="card" style="text-align:center;padding:3rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:48px;height:48px;margin:0 auto 1rem;opacity:0.4;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 style="margin:0 0 0.5rem;font-size:1.1rem;">Sin datos</h3>
+            <p style="margin:0;color:var(--text-muted);">Vuelve al paso 1</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("← Volver al paso 1", use_container_width=True):
+            st.session_state.step = 1; st.rerun()
     else:
         # Tabla de referencia
         if st.session_state.get('tarifas_df') is not None:
@@ -623,37 +666,29 @@ elif st.session_state.step == 3:
                 st.dataframe(tdf, use_container_width=True)
                 st.caption("Niveles E no se usan en Cobertura JULIO (solo A-D)")
         
-        # Obtener grupos disponibles
         grupos = ['grupo_1','grupo_2','grupo_3','grupo_4']
         if st.session_state.get('tarifas_df') is not None:
-            try:
-                grupos = st.session_state.tarifas_df['grupo'].unique().tolist()
-            except:
-                pass
+            try: grupos = st.session_state.tarifas_df['grupo'].unique().tolist()
+            except: pass
         
-        # Build mapping table
         rows = []
         for dane, col in st.session_state.colegios_data.items():
             nombre = col.get('nombre', '')
             rows.append({
-                'DANE': str(dane),
-                'Colegio': nombre,
+                'DANE': str(dane), 'Colegio': nombre,
                 'Grupo': st.session_state.tarifas_mapping.get(str(dane), 'grupo_1')
             })
-        
         map_df = pd.DataFrame(rows)
         
-        st.markdown('<div class="card animate-in animate-delay-2">', unsafe_allow_html=True)
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        st.caption("Selecciona el grupo de tarifa para cada colegio")
         edited_map = st.data_editor(
-            map_df,
-            use_container_width=True,
-            hide_index=True,
+            map_df, use_container_width=True, hide_index=True,
             column_config={
                 "DANE": st.column_config.TextColumn("DANE", disabled=True, width="small"),
                 "Colegio": st.column_config.TextColumn("Colegio", disabled=True, width="large"),
                 "Grupo": st.column_config.SelectboxColumn("Grupo tarifa", options=grupos, required=True, width="medium"),
-            },
-            key="tarifa_editor"
+            }, key="tarifa_editor"
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -662,66 +697,80 @@ elif st.session_state.step == 3:
             if st.button("← Volver", use_container_width=True):
                 st.session_state.step = 2; st.rerun()
         with col2:
-            if st.button("💾 Guardar y continuar", type="primary", use_container_width=True):
+            if st.button("Guardar y continuar →", type="primary", use_container_width=True):
                 out = edited_map[['DANE', 'Grupo']].rename(columns={'Grupo': 'grupo_tarifa'})
                 out.to_csv("colegios_tarifas.csv", index=False)
                 st.session_state.tarifas_mapping = dict(zip(out['DANE'], out['grupo_tarifa']))
                 st.session_state.colegios_tarifas_df = out
-                st.markdown('<div class="success-box">✅ Tarifas guardadas</div>', unsafe_allow_html=True)
-                st.session_state.step = 4
-                st.rerun()
+                st.toast("✅ Tarifas guardadas", icon="✅")
+                st.session_state.step = 4; st.rerun()
 
 # ═══════════════════════════════════════════
 # PASO 4: DESCARGAR
 # ═══════════════════════════════════════════
 elif st.session_state.step == 4:
-    st.markdown('<div class="animate-in animate-delay-2">', unsafe_allow_html=True)
-    st.markdown("### 📥 Paso 4: Descargar archivo final")
-    st.caption("El archivo está listo con todas las fórmulas y formatos conservados")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="animate-in" style="margin-bottom:1.5rem;">
+        <h2 style="margin:0 0 0.25rem;font-size:1.25rem;font-weight:700;color:var(--text);">Descargar final</h2>
+        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Archivo listo con fórmulas y formatos conservados</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    if st.session_state.output_file and Path(st.session_state.output_file).exists():
+    if not (st.session_state.output_file and Path(st.session_state.output_file).exists()):
+        st.markdown("""
+        <div class="card" style="text-align:center;padding:3rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:48px;height:48px;margin:0 auto 1rem;opacity:0.4;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <h3 style="margin:0 0 0.5rem;font-size:1.1rem;">Sin archivo generado</h3>
+            <p style="margin:0;color:var(--text-muted);">Completa los pasos anteriores</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("← Volver al inicio", use_container_width=True):
+            for k in list(st.session_state.keys()): del st.session_state[k]
+            st.rerun()
+    else:
         with open(st.session_state.output_file, 'rb') as f:
             data = f.read()
         
-        st.markdown('<div class="success-box">✅ Archivo listo para descargar</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="card card-gold" style="text-align:center;padding:2rem;">
+            <div style="font-size:3rem;margin-bottom:0.5rem;">✅</div>
+            <h3 style="margin:0 0 0.5rem;color:var(--text);">Archivo listo</h3>
+            <p style="margin:0 0 1.5rem;color:var(--text-muted);">COBERTURA_FINAL.xlsx con todas las fórmulas</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        st.markdown('<div class="card card-gold animate-in animate-delay-2">', unsafe_allow_html=True)
         st.download_button(
             "⬇️ Descargar COBERTURA_FINAL.xlsx",
-            data=data,
-            file_name="COBERTURA_FINAL.xlsx",
+            data=data, file_name="COBERTURA_FINAL.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            type="primary",
-            use_container_width=True
+            type="primary", use_container_width=True
         )
-        st.markdown('</div>', unsafe_allow_html=True)
         
         st.divider()
         
         # Resumen final
-        st.markdown('<div class="animate-in animate-delay-3">', unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
-        c1.metric("Colegios procesados", len(st.session_state.colegios_data))
-        c2.metric("Filas en Cobertura", len(st.session_state.cobertura_df) if st.session_state.cobertura_df is not None else 0)
-        c3.metric("Grupos de tarifa usados", len(set(st.session_state.tarifas_mapping.values())))
-        st.markdown('</div>', unsafe_allow_html=True)
+        c1.metric("Colegios", len(st.session_state.colegios_data))
+        c2.metric("Filas", len(st.session_state.cobertura_df) if st.session_state.cobertura_df is not None else 0)
+        c3.metric("Grupos tarifa", len(set(st.session_state.tarifas_mapping.values())))
         
         # Log
         log_path = Path(st.session_state.output_file).with_name(
             Path(st.session_state.output_file).stem + '_log.json'
         )
         if log_path.exists():
-            with st.expander("📋 Ver detalle y advertencias"):
+            with st.expander("📋 Detalle y advertencias"):
                 log = json.loads(log_path.read_text(encoding='utf-8'))
                 
                 if log.get('colegios_sin_cobertura'):
-                    st.markdown("**⚠️ Colegios en Certificado SIN coincidencia en Cobertura:**")
+                    st.markdown("**⚠️ Sin coincidencia en Cobertura:**")
                     for c in log['colegios_sin_cobertura']:
                         st.write(f"  • {c}")
                 
                 if log.get('colegios_sin_certificado'):
-                    st.markdown("**ℹ️ Colegios en Cobertura SIN certificado:**")
+                    st.markdown("**ℹ️ Sin certificado:**")
                     for c in log['colegios_sin_certificado'][:15]:
                         st.write(f"  • {c}")
                     if len(log['colegios_sin_certificado']) > 15:
@@ -733,37 +782,14 @@ elif st.session_state.step == 4:
         
         st.divider()
         if st.button("🔄 Procesar otro mes", use_container_width=True):
-            for k in list(st.session_state.keys()):
-                del st.session_state[k]
+for k in list(st.session_state.keys()): del st.session_state[k]
             st.rerun()
-    else:
-        st.warning("No hay archivo generado. Completa los pasos anteriores.")
-        if st.button("← Volver al inicio"): 
-            for k in list(st.session_state.keys()): del st.session_state[k]
-            st.rerun()
-
-# ─── Footer ───
-st.divider()
-st.caption("PAE Automatización v1.1 | UT Alianza Integral | Dudas: soporte@utalianzaintegral.gov.co")
-
-# ─── Keyboard shortcuts ───
-st.markdown("""
-<script>
-document.addEventListener('keydown', function(e) {
-    // Enter para procesar en paso 1
-    if (e.key === 'Enter' && !e.target.matches('input, textarea, select')) {
-        const btn = document.querySelector('button[kind="primary"]:not([disabled])');
-        if (btn && btn.textContent.includes('Procesar')) btn.click();
-    }
-    // Flechas para navegar
-    if (e.key === 'ArrowRight' && !e.target.matches('input, textarea, select')) {
-        const btn = document.querySelector('button[kind="primary"]:not([disabled])');
-        if (btn && (btn.textContent.includes('Continuar') || btn.textContent.includes('Guardar'))) btn.click();
-    }
-    if (e.key === 'ArrowLeft' && !e.target.matches('input, textarea, select')) {
-        const btn = document.querySelector('button[kind="secondary"]');
-        if (btn && btn.textContent.includes('Volver')) btn.click();
-    }
-});
-</script>
-""", unsafe_allow_html=True)
+    
+    # ─── Footer ───
+    st.divider()
+    st.markdown("""
+    <div style="text-align:center;padding:1rem;color:var(--text-dim);font-size:0.75rem;">
+        PAE Automatización v1.2 · UT Alianza Integral · Programa Alimentación Escolar
+        <br><a href="mailto:soporte@utalianzaintegral.gov.co" style="color:var(--gold);">soporte@utalianzaintegral.gov.co</a>
+    </div>
+    """, unsafe_allow_html=True)
