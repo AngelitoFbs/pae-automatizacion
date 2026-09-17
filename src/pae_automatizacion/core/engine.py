@@ -223,27 +223,37 @@ class CoberturaWriter:
                     if norm:
                         self.name_to_row[norm] = row
 
-    def find_or_create_row(self, dane: str, nombre: str) -> Tuple[int, bool]:
-        norm_nombre = self._normalize_name(nombre)
+def find_or_create_row(self, dane: str, nombre: str) -> Tuple[int, bool]:
+        """Encuentra fila existente por DANE o crea nueva.
+        
+        Usa DANE como clave primaria (identificador único), 
+        cae a matching por nombre solo si DANE no existe.
+        """
+        # 1. Buscar por DANE exacto (clave primaria) - MÁS ROBUSTO
+        for row in range(DATA_START_ROW, self.ws.max_row + 1):
+            dane_cell = self.ws.cell(row=row, column=DANE_COL)
+            if dane_cell.value and str(dane_cell.value).strip() == dane:
+                return row, False
 
-        # Match exacto normalizado
+        # 2. Fallback: matching por nombre normalizado (exacto)
+        norm_nombre = self._normalize_name(nombre)
         if norm_nombre in self.name_to_row:
             row = self.name_to_row[norm_nombre]
             self._safe_write_cell(row, DANE_COL, dane)
             return row, False
 
-        # Match fuzzy (substring)
+        # 3. Fallback fuzzy (substring) - menos confiable
         for norm_name, row in self.name_to_row.items():
             if norm_nombre in norm_name or norm_name in norm_nombre:
                 self._safe_write_cell(row, DANE_COL, dane)
                 return row, True
 
-        # Crear nueva fila
+        # 4. Crear nueva fila al final
         new_row = self.ws.max_row + 1
         self._safe_write_cell(new_row, 1, new_row - DATA_START_ROW + 1)
         self._safe_write_cell(new_row, NAME_COL, nombre)
-        self.ws.cell(row=new_row, column=DANE_COL, value=dane)
-        self.name_to_row[norm_nombre] = new_row
+        self._safe_write_cell(new_row, DANE_COL, dane)
+        self.name_to_row[self._normalize_name(nombre)] = new_row
         return new_row, True
 
     def write_colegio(self, colegio: ColegioData) -> List[dict]:
