@@ -5,8 +5,9 @@ import tempfile
 import os
 from pathlib import Path
 
-from ..core.engine import PAEEngine
-from ..core.config import OPERADORES, MESES_PAE, get_template_names
+# Absolute imports for Streamlit Cloud compatibility
+from pae_automatizacion.core.engine import PAEEngine
+from pae_automatizacion.core.config import OPERADORES, MESES_PAE, get_template_names
 
 OPERADOR_KEY = "kelly_primo"
 OPERADOR = OPERADORES[OPERADOR_KEY]

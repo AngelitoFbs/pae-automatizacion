@@ -1,6 +1,12 @@
 """PAE Automatización - App principal multi-módulo"""
 import streamlit as st
+import sys
 from pathlib import Path
+
+# Add src to Python path for Streamlit Cloud
+SRC_PATH = Path(__file__).parent / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
 
 # Import modules
 from pae_automatizacion.modules.kelly_primo import render_kelly_module

@@ -3,8 +3,9 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 
-from ..core.engine import PAEEngine
-from ..core.config import OPERADORES, MESES_PAE, get_template_names, NIVEL_COLS
+# Absolute imports for Streamlit Cloud compatibility
+from pae_automatizacion.core.engine import PAEEngine
+from pae_automatizacion.core.config import OPERADORES, MESES_PAE, get_template_names, NIVEL_COLS
 
 OPERADOR_KEY = "laura_jimenez"
 OPERADOR = OPERADORES[OPERADOR_KEY]
