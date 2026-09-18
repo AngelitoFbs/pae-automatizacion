@@ -536,6 +536,45 @@ class PAEEngine:
         """Propiedad que devuelve los registros de proceso para reportes."""
         return self.registros_borrador
 
+    def get_preview(self):
+        """Devuelve un dataframe con la vista previa de los datos procesados."""
+        import pandas as pd
+        if not self.registros_borrador:
+            return pd.DataFrame()
+        
+        # Construir dataframe desde los registros
+        data = []
+        for r in self.registros_borrador:
+            row = {
+                'fila': r.fila,
+                'dane': r.dane,
+                'nombre': getattr(r, 'nombre_cobertura', ''),
+                'bloque': r.bloque,
+                'nivel': r.nivel,
+                'tipo_racion': r.tipo_racion,
+                'modalidad': r.modalidad,
+            }
+            # Agregar datos de ración por nivel (AM/PM/Días)
+            for nivel in ['A', 'B', 'C', 'D']:
+                row[f'{nivel}_AM'] = r.get(f'{nivel}_AM', 0) if hasattr(r, f'{nivel}_AM') else 0
+                row[f'{nivel}_PM'] = r.get(f'{nivel}_PM', 0) if hasattr(r, f'{nivel}_PM') else 0
+                row[f'{nivel}_Días'] = r.get(f'{nivel}_Días', 0) if hasattr(r, f'{nivel}_Días') else 0
+            data.append(row)
+        
+        df = pd.DataFrame(data)
+        if df.empty:
+            return df
+        
+        # Filtrar filas con datos
+        data_cols = [c for c in df.columns if any(x in c for x in ['_AM', '_PM', '_Días'])]
+        if data_cols:
+            df['_has'] = df[data_cols].notna().any(axis=1)
+            show = df[df['_has']].drop(columns=['_has'])
+        else:
+            show = df
+        
+        return show
+
 
 def main():
     import click
