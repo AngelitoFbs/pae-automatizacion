@@ -574,6 +574,21 @@ class PAEEngine:
             show = df
         
         return show
+    
+    def get_log_data(self):
+        """Devuelve diccionario con estadísticas del log para métricas."""
+        colegios_sin_cobertura = [
+            dane for dane in self.colegios.keys()
+            if not any(r.dane == dane for r in self.registros_borrador)
+        ]
+        return {
+            'colegios_procesados': len(self.colegios),
+            'filas_escritas': len(self.registros_borrador),
+            'colegios_sin_cobertura': colegios_sin_cobertura
+        }
+
+
+def main():
 
 
 def main():
