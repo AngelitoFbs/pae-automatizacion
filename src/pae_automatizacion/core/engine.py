@@ -546,19 +546,19 @@ class PAEEngine:
         data = []
         for r in self.registros_borrador:
             row = {
-                'fila': r.fila,
+                'fila': r.fila_am,  # Usar fila_am como fila principal
                 'dane': r.dane,
-                'nombre': getattr(r, 'nombre_cobertura', ''),
+                'nombre': r.nombre_cobertura,
                 'bloque': r.bloque,
                 'nivel': r.nivel,
                 'tipo_racion': r.tipo_racion,
                 'modalidad': r.modalidad,
             }
             # Agregar datos de ración por nivel (AM/PM/Días)
-            for nivel in ['A', 'B', 'C', 'D']:
-                row[f'{nivel}_AM'] = r.get(f'{nivel}_AM', 0) if hasattr(r, f'{nivel}_AM') else 0
-                row[f'{nivel}_PM'] = r.get(f'{nivel}_PM', 0) if hasattr(r, f'{nivel}_PM') else 0
-                row[f'{nivel}_Días'] = r.get(f'{nivel}_Días', 0) if hasattr(r, f'{nivel}_Días') else 0
+            row['AM'] = r.raciones_dia  # Usar raciones_dia como valor AM
+            row['PM'] = 0  # Valor por defecto para PM
+            row['Días'] = r.dias  # Usar dias como días
+            
             data.append(row)
         
         df = pd.DataFrame(data)
@@ -566,7 +566,7 @@ class PAEEngine:
             return df
         
         # Filtrar filas con datos
-        data_cols = [c for c in df.columns if any(x in c for x in ['_AM', '_PM', '_Días'])]
+        data_cols = [c for c in df.columns if any(x in c for x in ['AM', 'PM', 'Días'])]
         if data_cols:
             df['_has'] = df[data_cols].notna().any(axis=1)
             show = df[df['_has']].drop(columns=['_has'])
