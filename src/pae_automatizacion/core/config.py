@@ -159,6 +159,48 @@ NAME_COL = 2
 DANE_COL = 3
 DATA_START_ROW = 4
 
+# ─── Operadores ───
+OPERADORES = {
+    "kelly_primo": {
+        "nombre": "Kelly Primo",
+        "codigo": "KP",
+        "color": "#E7B52A",
+        "icon": "👩‍💼",
+        "descripcion": "Operación y supervisión de entrega PAE",
+    },
+    "laura_jimenez": {
+        "nombre": "Laura Jiménez",
+        "codigo": "LJ",
+        "color": "#3B82F6",
+        "icon": "📊",
+        "descripcion": "Consolidación y reporte de cobertura",
+    },
+}
+
+# ─── Meses PAE ───
+MESES_PAE = [
+    ("ENERO", 1), ("FEBRERO", 2), ("MARZO", 3), ("ABRIL", 4),
+    ("MAYO", 5), ("JUNIO", 6), ("JULIO", 7), ("AGOSTO", 8),
+    ("SEPTIEMBRE", 9), ("OCTUBRE", 10), ("NOVIEMBRE", 11), ("DICIEMBRE", 12),
+]
+
+def get_template_names(mes: str) -> tuple:
+    """Nombres esperados de plantillas por mes"""
+    return (
+        f"2_CERTIFICACIONES_MES_DE_{mes.upper()}.xlsx",
+        f"3_COBERTURA_EJECUTADA_{mes.upper()}.xlsx",
+    )
+
+# Columnas de la tabla de raciones en Certificado
+
+# Columnas de la tabla de raciones en Certificado
+NIVEL_COLS = {
+    'A': {'AM': 3, 'PM': 4, 'TOTAL_COB': 5, 'DIAS': 6, 'TOTAL_RAC': 7, 'VALOR': 23},
+    'B': {'AM': 8, 'PM': 9, 'TOTAL_COB': 10, 'DIAS': 11, 'TOTAL_RAC': 12, 'VALOR': 24},
+    'C': {'AM': 13, 'PM': 14, 'TOTAL_COB': 15, 'DIAS': 16, 'TOTAL_RAC': 17, 'VALOR': 25},
+    'D': {'AM': 18, 'PM': 19, 'TOTAL_COB': 20, 'DIAS': 21, 'TOTAL_RAC': 22, 'VALOR': 26},
+}
+
 # Rutas
 BASE_DIR = Path(__file__).parent.parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
