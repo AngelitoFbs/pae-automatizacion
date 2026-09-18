@@ -531,6 +531,11 @@ class PAEEngine:
             json.dump(log_data, f, ensure_ascii=False, indent=2)
         logger.info(f"Log guardado: {log_path}")
 
+    @property
+    def resultado(self):
+        """Propiedad que devuelve los registros de proceso para reportes."""
+        return self.registros_borrador
+
 
 def main():
     import click
