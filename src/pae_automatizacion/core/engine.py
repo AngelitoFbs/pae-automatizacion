@@ -500,6 +500,37 @@ class PAEEngine:
         df.to_excel(output_path, index=False)
         logger.info(f"Borrador generado: {output_path}")
 
+    def procesar(self, output_path: str = None, log_path: str = None):
+        """Procesa el certificado y cobertura generando el borrador."""
+        self.extraer()
+        if output_path is None:
+            output_path = "output/borrador_revision.xlsx"
+        self.generar_borrador_excel(output_path)
+        if log_path is None:
+            log_path = "logs/borrador_revision.log"
+        logger.info(f"Procesamiento completado. Output: {output_path}")
+
+    def save_output(self, output_path: str):
+        """Guarda el output Excel."""
+        self.generar_borrador_excel(output_path)
+
+    def save_log(self, log_path: str):
+        """Guarda el log JSON."""
+        import json
+        from pathlib import Path
+        log_data = {
+            'colegios_procesados': len(self.colegios),
+            'filas_escritas': len(self.registros_borrador),
+            'colegios_sin_cobertura': [
+                dane for dane in self.colegios.keys()
+                if not any(r.dane == dane for r in self.registros_borrador)
+            ]
+        }
+        Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(log_path, 'w', encoding='utf-8') as f:
+            json.dump(log_data, f, ensure_ascii=False, indent=2)
+        logger.info(f"Log guardado: {log_path}")
+
 
 def main():
     import click
