@@ -34,11 +34,17 @@ def render_kelly_module():
         st.markdown("### ⚙️ Configuración")
         
         mes_options = [m[0] for m in MESES_PAE]
-        mes_idx = st.selectbox("Mes", range(len(mes_options)), 
-                               format_func=lambda i: mes_options[i], index=6)
+        # Usar key explícito para evitar duplicados de ID en reruns
+        mes_idx = st.selectbox(
+            "Mes", 
+            range(len(mes_options)), 
+            format_func=lambda i: mes_options[i],
+            index=6,
+            key="kelly_mes_select"
+        )
         mes = mes_options[mes_idx]
         
-        anio = st.number_input("Año", min_value=2024, max_value=2030, value=2026)
+        anio = st.number_input("Año", min_value=2024, max_value=2030, value=2026, key="kelly_anio_input")
         
         st.divider()
         st.caption(f"📧 {OPERADOR['email']}")
@@ -58,7 +64,7 @@ def render_kelly_module():
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown("**📄 Certificado**")
         st.caption(f"Esperado: {cert_name}")
-        cert_file = st.file_uploader("Certificado", type=['xlsx'], label_visibility="collapsed")
+        cert_file = st.file_uploader("Certificado", type=['xlsx'], label_visibility="collapsed", key="kelly_cert_file")
         if cert_file:
             st.success(f"✅ {cert_file.name}")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -67,13 +73,13 @@ def render_kelly_module():
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.markdown("**📋 Cobertura**")
         st.caption(f"Esperado: {cob_name}")
-        cob_file = st.file_uploader("Cobertura", type=['xlsx'], label_visibility="collapsed")
+        cob_file = st.file_uploader("Cobertura", type=['xlsx'], label_visibility="collapsed", key="kelly_cob_file")
         if cob_file:
             st.success(f"✅ {cob_file.name}")
         st.markdown('</div>', unsafe_allow_html=True)
 
     if cert_file and cob_file:
-        if st.button("🚀 Procesar y Generar", type="primary", use_container_width=True):
+        if st.button("🚀 Procesar y Generar", type="primary", use_container_width=True, key="kelly_procesar_btn"):
             with st.spinner("Procesando..."):
                 try:
                     with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tc:
