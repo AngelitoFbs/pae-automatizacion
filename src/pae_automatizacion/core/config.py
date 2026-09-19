@@ -167,6 +167,7 @@ OPERADORES = {
         "color": "#E7B52A",
         "icon": "👩‍💼",
         "descripcion": "Operación y supervisión de entrega PAE",
+        "email": "kelly.primo@alianzas.mx",
     },
     "laura_jimenez": {
         "nombre": "Laura Jiménez",
@@ -174,6 +175,7 @@ OPERADORES = {
         "color": "#3B82F6",
         "icon": "📊",
         "descripcion": "Consolidación y reporte de cobertura",
+        "email": "laura.jimenez@alianzas.mx",
     },
 }
 
