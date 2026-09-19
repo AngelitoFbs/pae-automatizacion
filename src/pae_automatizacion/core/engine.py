@@ -589,9 +589,6 @@ class PAEEngine:
 
 
 def main():
-
-
-def main():
     import click
 
     @click.group()

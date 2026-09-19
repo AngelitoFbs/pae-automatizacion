@@ -2,6 +2,8 @@
 import streamlit as st
 import pandas as pd
 import traceback
+import tempfile
+import os
 from pathlib import Path
 
 from pae_automatizacion.core.engine import PAEEngine
@@ -15,10 +17,6 @@ OPERADOR = OPERADORES[OPERADOR_KEY]
 
 
 def render_kelly_module():
-    # Usar config global del sidebar (app.py)
-    mes = st.session_state.get('global_mes', 'JULIO')
-    anio = st.session_state.get('global_anio', 2026)
-    
     st.markdown(f"""
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
         <div style="width:40px;height:40px;border-radius:10px;background:{OPERADOR['color']};display:flex;align-items:center;justify-content:center;">
@@ -31,13 +29,27 @@ def render_kelly_module():
     </div>
     """, unsafe_allow_html=True)
 
+    # Sidebar config
+    with st.sidebar:
+        st.markdown("### ⚙️ Configuración")
+        
+        mes_options = [m[0] for m in MESES_PAE]
+        mes_idx = st.selectbox("Mes", range(len(mes_options)), 
+                               format_func=lambda i: mes_options[i], index=6)
+        mes = mes_options[mes_idx]
+        
+        anio = st.number_input("Año", min_value=2024, max_value=2030, value=2026)
+        
+        st.divider()
+        st.caption(f"📧 {OPERADOR['email']}")
+
     # Main content
     cert_name, cob_name = get_template_names(mes)
     
     st.markdown(f"""
     <div style="margin-bottom:1.5rem;">
         <h2 style="margin:0 0 0.25rem;font-size:1.25rem;font-weight:700;">Procesar {mes} {anio}</h2>
-        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Certificado → Cobertura ({OPERADOR['nombre']})</p>
+        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Certificado -> Cobertura ({OPERADOR['nombre']})</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -61,27 +73,15 @@ def render_kelly_module():
         st.markdown('</div>', unsafe_allow_html=True)
 
     if cert_file and cob_file:
-        # Validar archivos antes de procesar
-        cert_valid, cert_err = validate_excel_file(cert_file.getvalue(), cert_file.name)
-        cob_valid, cob_err = validate_excel_file(cob_file.getvalue(), cob_file.name)
-        
-        if not cert_valid:
-            st.error(f"Certificado inválido: {cert_err}")
-        if not cob_valid:
-            st.error(f"Cobertura inválida: {cob_err}")
-        
-        if cert_valid and cob_valid and st.button("🚀 Procesar y Generar", type="primary", use_container_width=True):
+        if st.button("🚀 Procesar y Generar", type="primary", use_container_width=True):
             with st.spinner("Procesando..."):
-                with secure_temp_files(2) as (cert_path, cob_path):
-                    if not safe_save_uploaded_file(cert_file, cert_path):
-                        st.error("Error guardando certificado")
-                        return
-                    if not safe_save_uploaded_file(cob_file, cob_path):
-                        st.error("Error guardando cobertura")
-                        return
-                    
+                try:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tc:
+                        tc.write(cert_file.getvalue()); cert_path = tc.name
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tc:
+                        tc.write(cob_file.getvalue()); cob_path = tc.name
                     try:
-                        engine = PAEEngine(str(cert_path), str(cob_path))
+                        engine = PAEEngine(cert_path, cob_path)
                         engine.procesar()
                         
                         out_name = f"{OPERADOR['codigo']}_{mes}_{anio}_cobertura.xlsx"
@@ -96,9 +96,12 @@ def render_kelly_module():
                         st.success(f"✅ Procesado: {len(engine.colegios)} colegios, {len(engine.resultado)} filas")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Error procesando: {e}")
-                        import traceback
-                        st.code(traceback.format_exc())
+                        st.error(f"Error: {e}")
+                    finally:
+                        try: os.unlink(cert_path); os.unlink(cob_path)
+                        except: pass
+                except Exception as e:
+                    st.error(f"Error inesperado: {e}")
 
     # Show preview if processed
     if f'{OPERADOR_KEY}_engine' in st.session_state:
